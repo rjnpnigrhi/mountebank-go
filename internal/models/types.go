@@ -1,5 +1,9 @@
 package models
 
+import (
+	"encoding/json"
+)
+
 // Request represents a protocol-agnostic request
 type Request struct {
 	Protocol      string                 `json:"protocol,omitempty"`
@@ -92,7 +96,34 @@ type Behavior struct {
 
 // WaitBehavior represents a wait/latency behavior
 type WaitBehavior struct {
-	Milliseconds int `json:"milliseconds,omitempty"`
+	Milliseconds int    `json:"milliseconds,omitempty"`
+	Fn           string `json:"fn,omitempty"` // For JS injection
+}
+
+// UnmarshalJSON implements custom unmarshaling for WaitBehavior
+func (w *WaitBehavior) UnmarshalJSON(data []byte) error {
+	// Try number
+	var ms int
+	if err := json.Unmarshal(data, &ms); err == nil {
+		w.Milliseconds = ms
+		return nil
+	}
+
+	// Try string
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		w.Fn = s
+		return nil
+	}
+
+	// Try object
+	type Alias WaitBehavior
+	var aux Alias
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*w = WaitBehavior(aux)
+	return nil
 }
 
 // CopyBehavior represents a copy behavior
