@@ -1,5 +1,3 @@
-
-
 {{ template "_header.html" . }}
 
 <link rel='stylesheet' type='text/css' href='/stylesheets/imposters.css' />
@@ -8,7 +6,8 @@
 
 <p><em>You may explore other UIs, including:</em></p>
 <ul class='bullet-list'>
-  <li><em><a href='http://donhenton.github.io/mountebank-UI/public_html/index.html#/'>Mountebank-UI by Don Henton</a></em></li>
+  <li><em><a href='http://donhenton.github.io/mountebank-UI/public_html/index.html#/'>Mountebank-UI by Don
+        Henton</a></em></li>
   <li><em><a href='https://github.com/Opus-Software/disguise'>Disguise by Opus Software</a></em></li>
   <li><em><a href='https://github.com/testinggospels/mountebank-ui'>Mountebank UI by The Testing Gospels</a></em></li>
 </ul>
@@ -22,7 +21,13 @@
   </tr>
 
   {{ range $imposter := .imposters }}
-  
+  <tr>
+    <td><a href='/imposters/{{ $imposter.port }}'>{{ if $imposter.name }}{{ $imposter.name }}{{ else }}imposter{{ end
+        }}</a></td>
+    <td>{{ $imposter.protocol }}</td>
+    <td><a href='/imposters/{{ $imposter.port }}'>{{ $imposter.port }}</a></td>
+    <td>{{ $imposter.numberOfRequests }}</td>
+  </tr>
   {{ end }}
 </table>
 
