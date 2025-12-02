@@ -286,4 +286,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-This project is a port of the original [mountebank](https://github.com/mountebank-testing/mountebank) created by Brandon Byars. All credit for the design and concepts goes to the original project.
+This project is a port of the original [mountebank](https://github.com/mountebank-testing/mountebank) created by Rajan Panigrahi. All credit for the design and concepts goes to the original project.

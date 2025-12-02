@@ -231,6 +231,16 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	// Check if client accepts HTML (browser)
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		err := s.renderer.Render(w, "config", config)
+		if err != nil {
+			s.logger.Errorf("Failed to render config: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	
