@@ -330,7 +330,7 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		s.logger.Infof("%s %s took %v", r.Method, r.URL.Path, duration)
+		s.logger.Infof("[ADMIN] %s %s took %v", r.Method, r.URL.Path, duration)
 	})
 }
 
