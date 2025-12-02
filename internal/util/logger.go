@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -14,6 +15,71 @@ type Logger struct {
 	*logrus.Logger
 	scope string
 	hook  *LogHook
+}
+
+// ... (NewLogger remains mostly same, just need to ensure imports are correct)
+
+// LogEntry represents a log entry
+type LogEntry struct {
+	Level     string `json:"level"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+// LogHook captures logs in memory
+type LogHook struct {
+	Entries []LogEntry
+	mu      sync.RWMutex
+}
+
+// Levels returns the supported log levels
+func (h *LogHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+// Fire is called when a log entry is created
+func (h *LogHook) Fire(entry *logrus.Entry) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.Entries = append(h.Entries, LogEntry{
+		Level:     entry.Level.String(),
+		Message:   entry.Message,
+		Timestamp: entry.Time.Format(time.RFC3339),
+	})
+	return nil
+}
+
+// GetEntries returns the captured log entries
+func (l *Logger) GetEntries(startIndex, endIndex int) []LogEntry {
+	if l.hook == nil {
+		return []LogEntry{}
+	}
+
+	l.hook.mu.RLock()
+	defer l.hook.mu.RUnlock()
+
+	entries := l.hook.Entries
+	total := len(entries)
+
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if startIndex > total {
+		startIndex = total
+	}
+
+	if endIndex < 0 || endIndex > total {
+		endIndex = total
+	}
+
+	if startIndex > endIndex {
+		return []LogEntry{}
+	}
+
+	// Return a copy to avoid race conditions after returning
+	result := make([]LogEntry, endIndex-startIndex)
+	copy(result, entries[startIndex:endIndex])
+	return result
 }
 
 // NewLogger creates a new logger instance
@@ -118,56 +184,4 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.Logger.Error(l.formatMessage(fmt.Sprintf(format, args...)))
 }
 
-// LogEntry represents a log entry
-type LogEntry struct {
-	Level     string `json:"level"`
-	Message   string `json:"message"`
-	Timestamp string `json:"timestamp"`
-}
 
-// LogHook captures logs in memory
-type LogHook struct {
-	Entries []LogEntry
-}
-
-// Levels returns the supported log levels
-func (h *LogHook) Levels() []logrus.Level {
-	return logrus.AllLevels
-}
-
-// Fire is called when a log entry is created
-func (h *LogHook) Fire(entry *logrus.Entry) error {
-	h.Entries = append(h.Entries, LogEntry{
-		Level:     entry.Level.String(),
-		Message:   entry.Message,
-		Timestamp: entry.Time.Format(time.RFC3339),
-	})
-	return nil
-}
-
-// GetEntries returns the captured log entries
-func (l *Logger) GetEntries(startIndex, endIndex int) []LogEntry {
-	if l.hook == nil {
-		return []LogEntry{}
-	}
-
-	entries := l.hook.Entries
-	total := len(entries)
-
-	if startIndex < 0 {
-		startIndex = 0
-	}
-	if startIndex > total {
-		startIndex = total
-	}
-
-	if endIndex < 0 || endIndex > total {
-		endIndex = total
-	}
-
-	if startIndex > endIndex {
-		return []LogEntry{}
-	}
-
-	return entries[startIndex:endIndex]
-}
