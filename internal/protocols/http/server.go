@@ -80,7 +80,11 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
-		s.logger.Infof("[IMPOSTER] %s %s took %v", r.Method, r.URL.Path, duration)
+		msg := fmt.Sprintf("[IMPOSTER] %s %s took %v", r.Method, r.URL.String(), duration)
+		if duration > 100*time.Millisecond {
+			msg += " (SLOW)"
+		}
+		s.logger.Info(msg)
 	}()
 
 	// Handle CORS

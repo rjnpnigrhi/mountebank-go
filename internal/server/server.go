@@ -330,7 +330,11 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		s.logger.Infof("[ADMIN] %s %s took %v", r.Method, r.URL.Path, duration)
+		msg := fmt.Sprintf("[ADMIN] %s %s took %v", r.Method, r.URL.String(), duration)
+		if duration > 100*time.Millisecond {
+			msg += " (SLOW)"
+		}
+		s.logger.Info(msg)
 	})
 }
 
