@@ -1,19 +1,29 @@
-
-
 {{ template "_header.html" . }}
 
-<h1>{{ .imposter.protocol }} Imposter on port {{ .imposter.port }}</h1>
+<h1>{{ .protocol }} Imposter on port {{ .port }}</h1>
 
-<h2>Requests</h2>
-
-{{ range $request := .imposter.requests }}
-<pre><code>{{ prettyPrint $request }}</code></pre>
+{{ if .name }}
+<p><strong>Name:</strong> {{ .name }}</p>
 {{ end }}
 
-<h2>Stubs</h2>
+<p><strong>Number of Requests:</strong> {{ .numberOfRequests }}</p>
 
-{{ range $stub := .imposter.stubs }}
+{{ if .requests }}
+<h2>Requests</h2>
+{{ range $request := .requests }}
+<pre><code>{{ prettyPrint $request }}</code></pre>
+{{ end }}
+{{ else }}
+<p><em>No requests recorded</em></p>
+{{ end }}
+
+{{ if .stubs }}
+<h2>Stubs</h2>
+{{ range $stub := .stubs }}
 <pre><code>{{ prettyPrint $stub }}</code></pre>
+{{ end }}
+{{ else }}
+<p><em>No stubs configured</em></p>
 {{ end }}
 
 {{ template "_footer.html" . }}

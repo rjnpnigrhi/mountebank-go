@@ -4,23 +4,27 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mountebank-testing/mountebank-go/internal/models"
 	"github.com/mountebank-testing/mountebank-go/internal/util"
+	"github.com/mountebank-testing/mountebank-go/internal/web"
 )
 
 // ImposterController handles single imposter endpoints
 type ImposterController struct {
 	repository *models.ImposterRepository
 	logger     *util.Logger
+	renderer   *web.Renderer
 }
 
 // NewImposterController creates a new imposter controller
-func NewImposterController(repository *models.ImposterRepository, logger *util.Logger) *ImposterController {
+func NewImposterController(repository *models.ImposterRepository, logger *util.Logger, renderer *web.Renderer) *ImposterController {
 	return &ImposterController{
 		repository: repository,
 		logger:     logger,
+		renderer:   renderer,
 	}
 }
 
@@ -46,6 +50,24 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 		"replayable":    replayable,
 		"requests":      true,
 		"removeProxies": removeProxies,
+		"stubs":         true,
+	}
+
+	// Check if client accepts HTML (browser)
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		info := imposter.ToJSON(options)
+		
+		// Convert struct to map for template access
+		var imposterMap map[string]interface{}
+		data, _ := json.Marshal(info)
+		json.Unmarshal(data, &imposterMap)
+		
+		err := ic.renderer.Render(w, "imposter", imposterMap)
+		if err != nil {
+			ic.logger.Errorf("Failed to render imposter: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

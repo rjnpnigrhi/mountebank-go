@@ -82,7 +82,7 @@ func (s *Server) createRouter() http.Handler {
 
 	// Create controllers
 	impostersController := controllers.NewImpostersController(s.repository, s.renderer, s.logger, s.config.AllowInjection)
-	imposterController := controllers.NewImposterController(s.repository, s.logger)
+	imposterController := controllers.NewImposterController(s.repository, s.logger, s.renderer)
 	logsController := controllers.NewLogsController(s.logger)
 
 	// Routes
