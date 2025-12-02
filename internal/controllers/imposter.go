@@ -74,6 +74,7 @@ func (ic *ImposterController) Delete(w http.ResponseWriter, r *http.Request) {
 		"replayable":    replayable,
 		"requests":      true,
 		"removeProxies": removeProxies,
+		"stubs":         false, // Don't include stubs in delete response
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -111,8 +112,8 @@ func (ic *ImposterController) PutStubs(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -161,8 +162,8 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -194,8 +195,8 @@ func (ic *ImposterController) DeleteStub(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -233,8 +234,8 @@ func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -259,8 +260,8 @@ func (ic *ImposterController) ResetRequests(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -285,8 +286,8 @@ func (ic *ImposterController) DeleteSavedProxyResponses(w http.ResponseWriter, r
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 

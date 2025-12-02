@@ -166,7 +166,7 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": true,
-		"stubs":    true,
+		"stubs":    false,
 	}))
 }
 
@@ -183,8 +183,8 @@ func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"replayable": true,
-			"requests":   true,
+			"requests": true,
+			"stubs":    false,
 		}))
 	}
 
@@ -255,8 +255,8 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"replayable": true,
-			"requests":   false,
+			"requests": false,
+			"stubs":    false,
 		}))
 	}
 
