@@ -232,9 +232,15 @@ type Stub struct {
 	Predicates []Predicate      `json:"predicates,omitempty"`
 	Responses  []ResponseConfig `json:"responses"`
 	Matches    []Match          `json:"matches,omitempty"`
+	Links      *StubLinks       `json:"_links,omitempty"`
 	
 	// Internal
 	IsProxy    bool             `json:"-"`
+}
+
+// StubLinks contains hypermedia links for a stub
+type StubLinks struct {
+	Self *Link `json:"self"`
 }
 
 // ImposterConfig represents the configuration for creating an imposter

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -161,10 +162,11 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 
 	// Return imposter info
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", fmt.Sprintf("http://localhost:%d/imposters/%d", imposter.Port(), imposter.Port()))
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": true,
+		"stubs":    true,
 	}))
 }
 

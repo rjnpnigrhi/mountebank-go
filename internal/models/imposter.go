@@ -37,6 +37,18 @@ type ImposterInfo struct {
 	Requests         []*Request             `json:"requests,omitempty"`
 	Stubs            []Stub                 `json:"stubs,omitempty"`
 	Middleware       string                 `json:"middleware,omitempty"`
+	Links            *ImposterLinks         `json:"_links,omitempty"`
+}
+
+// ImposterLinks contains hypermedia links for an imposter
+type ImposterLinks struct {
+	Self  *Link `json:"self"`
+	Stubs *Link `json:"stubs,omitempty"`
+}
+
+// Link represents a hypermedia link
+type Link struct {
+	Href string `json:"href"`
 }
 
 // NewImposter creates a new imposter
@@ -253,18 +265,26 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		allStubs := imp.stubs.GetAll()
 
 		filteredStubs := make([]Stub, 0, len(allStubs))
-		for _, stub := range allStubs {
+		for i, stub := range allStubs {
 			if removeProxies && stub.IsProxy {
 				continue
 			}
 			
 			if replayable {
-				// Create a copy to remove matches
+				// Create a copy to remove matches and links
 				stubCopy := stub
 				stubCopy.Matches = nil
+				stubCopy.Links = nil
 				filteredStubs = append(filteredStubs, stubCopy)
 			} else {
-				filteredStubs = append(filteredStubs, stub)
+				// Add hypermedia links to stub
+				stubCopy := stub
+				stubCopy.Links = &StubLinks{
+					Self: &Link{
+						Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs/%d", imp.port, i),
+					},
+				}
+				filteredStubs = append(filteredStubs, stubCopy)
 			}
 		}
 		info.Stubs = filteredStubs
@@ -274,6 +294,18 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	// If replayable is true, requests should be removed regardless of requests option
 	if !replayable && (options == nil || options["requests"] == true) {
 		info.Requests = imp.stubs.LoadRequests()
+	}
+
+	// Add hypermedia links (unless replayable is true)
+	if !replayable {
+		info.Links = &ImposterLinks{
+			Self: &Link{
+				Href: fmt.Sprintf("http://localhost:2525/imposters/%d", imp.port),
+			},
+			Stubs: &Link{
+				Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs", imp.port),
+			},
+		}
 	}
 
 	return info
