@@ -97,14 +97,20 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
     // Check if client accepts HTML (browser)
     if strings.Contains(r.Header.Get("Accept"), "text/html") {
         // Convert to simple JSON for template
-        imposterList := make([]interface{}, 0, len(imposters))
+        imposterList := make([]map[string]interface{}, 0, len(imposters))
         for _, imposter := range imposters {
-            imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
+            info := imposter.ToJSON(map[string]interface{}{
                 "replayable":    replayable,
                 "removeProxies": removeProxies,
                 "requests":      false,
                 "stubs":         includeStubs,
-            }))
+            })
+            
+            // Convert struct to map for template access
+            var imposterMap map[string]interface{}
+            data, _ := json.Marshal(info)
+            json.Unmarshal(data, &imposterMap)
+            imposterList = append(imposterList, imposterMap)
         }
 
         ic.logger.Infof("Rendering imposters page with %d imposters", len(imposterList))
