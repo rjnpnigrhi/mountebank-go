@@ -402,6 +402,35 @@
                         }
                     },
                     "response": []
+                },
+                {
+                    "name": "Get Logs (Paginated)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/logs?startIndex=0&endIndex=5",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startIndex",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "endIndex",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
                 }
             ]
         },

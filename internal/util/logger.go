@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -12,6 +13,7 @@ import (
 type Logger struct {
 	*logrus.Logger
 	scope string
+	hook  *LogHook
 }
 
 // NewLogger creates a new logger instance
@@ -37,9 +39,15 @@ func NewLogger(level string) *Logger {
 
 	logger.SetOutput(os.Stdout)
 
+	hook := &LogHook{
+		Entries: make([]LogEntry, 0),
+	}
+	logger.AddHook(hook)
+
 	return &Logger{
 		Logger: logger,
 		scope:  "",
+		hook:   hook,
 	}
 }
 
@@ -48,6 +56,7 @@ func (l *Logger) WithScope(scope string) *Logger {
 	return &Logger{
 		Logger: l.Logger,
 		scope:  scope,
+		hook:   l.hook,
 	}
 }
 
@@ -107,4 +116,58 @@ func (l *Logger) Error(args ...interface{}) {
 // Errorf logs a formatted error message
 func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.Logger.Error(l.formatMessage(fmt.Sprintf(format, args...)))
+}
+
+// LogEntry represents a log entry
+type LogEntry struct {
+	Level     string `json:"level"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+// LogHook captures logs in memory
+type LogHook struct {
+	Entries []LogEntry
+}
+
+// Levels returns the supported log levels
+func (h *LogHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+// Fire is called when a log entry is created
+func (h *LogHook) Fire(entry *logrus.Entry) error {
+	h.Entries = append(h.Entries, LogEntry{
+		Level:     entry.Level.String(),
+		Message:   entry.Message,
+		Timestamp: entry.Time.Format(time.RFC3339),
+	})
+	return nil
+}
+
+// GetEntries returns the captured log entries
+func (l *Logger) GetEntries(startIndex, endIndex int) []LogEntry {
+	if l.hook == nil {
+		return []LogEntry{}
+	}
+
+	entries := l.hook.Entries
+	total := len(entries)
+
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if startIndex > total {
+		startIndex = total
+	}
+
+	if endIndex < 0 || endIndex > total {
+		endIndex = total
+	}
+
+	if startIndex > endIndex {
+		return []LogEntry{}
+	}
+
+	return entries[startIndex:endIndex]
 }
