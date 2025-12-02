@@ -107,6 +107,11 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
             }))
         }
 
+        ic.logger.Infof("Rendering imposters page with %d imposters", len(imposterList))
+        if len(imposterList) > 0 {
+            ic.logger.Infof("First imposter: %+v", imposterList[0])
+        }
+
         err := ic.renderer.Render(w, "imposters", map[string]interface{}{
             "imposters": imposterList,
         })
