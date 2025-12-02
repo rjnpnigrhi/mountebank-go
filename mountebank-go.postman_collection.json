@@ -260,7 +260,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"stub\": {\n    \"responses\": [\n      {\n        \"is\": {\n          \"statusCode\": 200,\n          \"body\": \"Updated stub\"\n        }\n      }\n    ]\n  }\n}"
+                            "raw": "{\n  \"responses\": [\n    {\n      \"is\": {\n        \"statusCode\": 200,\n        \"body\": \"Updated stub\"\n      }\n    }\n  ]\n}"
                         },
                         "url": {
                             "raw": "http://localhost:2525/imposters/4545/stubs/0",

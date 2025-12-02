@@ -220,15 +220,13 @@ func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request struct {
-		Stub models.Stub `json:"stub"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	var stub models.Stub
+	if err := json.NewDecoder(r.Body).Decode(&stub); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := imposter.Stubs().ReplaceAtIndex(request.Stub, stubIndex); err != nil {
+	if err := imposter.Stubs().ReplaceAtIndex(stub, stubIndex); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
