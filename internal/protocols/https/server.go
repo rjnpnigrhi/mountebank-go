@@ -120,6 +120,12 @@ func Create(config *models.ImposterConfig, logger *util.Logger, getResponse func
 
 // handleRequest handles incoming HTTPS requests
 func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		s.logger.Infof("%s %s took %v", r.Method, r.URL.Path, duration)
+	}()
+
 	// Handle CORS
 	if s.allowCORS {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

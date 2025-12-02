@@ -98,6 +98,10 @@ func (s *Server) createRouter() http.Handler {
 	router.PathPrefix("/docs/").HandlerFunc(s.handleDocs)
 	
 	router.HandleFunc("/imposters", impostersController.Get).Methods("GET")
+	
+	// Add middleware
+	router.Use(s.loggingMiddleware)
+
 	router.HandleFunc("/imposters", impostersController.Post).Methods("POST")
 	router.HandleFunc("/imposters", impostersController.Delete).Methods("DELETE")
 	router.HandleFunc("/imposters", impostersController.Put).Methods("PUT")
@@ -308,6 +312,16 @@ func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
 		s.logger.Errorf("Failed to render docs %s: %v", path, err)
 		http.NotFound(w, r)
 	}
+}
+
+// loggingMiddleware logs request duration
+func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		duration := time.Since(start)
+		s.logger.Infof("%s %s took %v", r.Method, r.URL.Path, duration)
+	})
 }
 
 // Start starts the server
