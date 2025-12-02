@@ -146,18 +146,27 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 
 	var impostersConfig []models.ImposterConfig
 
-	// Try to unmarshal as wrapped object
-	var wrappedRequest struct {
-		Imposters []models.ImposterConfig `json:"imposters"`
-	}
-	if err := json.Unmarshal(body, &wrappedRequest); err == nil && len(wrappedRequest.Imposters) > 0 {
+	// Trim whitespace to check first character
+	trimmedBody := strings.TrimSpace(string(body))
+	if strings.HasPrefix(trimmedBody, "{") {
+		// Wrapped object
+		var wrappedRequest struct {
+			Imposters []models.ImposterConfig `json:"imposters"`
+		}
+		if err := json.Unmarshal(body, &wrappedRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		impostersConfig = wrappedRequest.Imposters
-	} else {
-		// Try to unmarshal as raw array
+	} else if strings.HasPrefix(trimmedBody, "[") {
+		// Raw array
 		if err := json.Unmarshal(body, &impostersConfig); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+	} else {
+		http.Error(w, "Invalid JSON: must be an object or an array", http.StatusBadRequest)
+		return
 	}
 
 	// Delete all existing imposters
