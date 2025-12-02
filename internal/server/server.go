@@ -320,6 +320,16 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		duration := time.Since(start)
+
+		// Filter out UI pages and static assets
+		if strings.Contains(r.Header.Get("Accept"), "text/html") ||
+			strings.HasPrefix(r.URL.Path, "/images/") ||
+			strings.HasPrefix(r.URL.Path, "/scripts/") ||
+			strings.HasPrefix(r.URL.Path, "/stylesheets/") ||
+			r.URL.Path == "/favicon.ico" {
+			return
+		}
+
 		s.logger.Infof("%s %s took %v", r.Method, r.URL.Path, duration)
 	})
 }
