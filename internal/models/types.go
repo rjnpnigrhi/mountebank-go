@@ -89,7 +89,7 @@ type JSONPathConfig struct {
 type Behavior struct {
 	Wait          *WaitBehavior          `json:"wait,omitempty"`
 	Decorate      string                 `json:"decorate,omitempty"`
-	Copy          []CopyBehavior         `json:"copy,omitempty"`
+	Copy          CopyBehaviorList       `json:"copy,omitempty"`
 	Lookup        *LookupBehavior        `json:"lookup,omitempty"`
 	ShellTransform string                `json:"shellTransform,omitempty"`
 }
@@ -123,6 +123,28 @@ func (w *WaitBehavior) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*w = WaitBehavior(aux)
+	return nil
+}
+
+// CopyBehaviorList represents a list of copy behaviors
+type CopyBehaviorList []CopyBehavior
+
+// UnmarshalJSON implements custom unmarshaling for CopyBehaviorList
+func (l *CopyBehaviorList) UnmarshalJSON(data []byte) error {
+	// Try object (single item)
+	var single CopyBehavior
+	if err := json.Unmarshal(data, &single); err == nil {
+		*l = CopyBehaviorList{single}
+		return nil
+	}
+
+	// Try array
+	var list []CopyBehavior
+	if err := json.Unmarshal(data, &list); err == nil {
+		*l = CopyBehaviorList(list)
+		return nil
+	}
+
 	return nil
 }
 
