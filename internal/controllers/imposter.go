@@ -130,11 +130,14 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var stub models.Stub
-	if err := json.NewDecoder(r.Body).Decode(&stub); err != nil {
+	var request struct {
+		Stub models.Stub `json:"stub"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	stub := request.Stub
 
 	// Get index from query parameter
 	indexStr := r.URL.Query().Get("index")
