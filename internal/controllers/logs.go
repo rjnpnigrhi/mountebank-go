@@ -5,18 +5,23 @@ import (
 	"net/http"
 	"strconv"
 
+	"strings"
+
 	"github.com/mountebank-testing/mountebank-go/internal/util"
+	"github.com/mountebank-testing/mountebank-go/internal/web"
 )
 
 // LogsController handles logs endpoints
 type LogsController struct {
-	logger *util.Logger
+	logger   *util.Logger
+	renderer *web.Renderer
 }
 
 // NewLogsController creates a new logs controller
-func NewLogsController(logger *util.Logger) *LogsController {
+func NewLogsController(logger *util.Logger, renderer *web.Renderer) *LogsController {
 	return &LogsController{
-		logger: logger,
+		logger:   logger,
+		renderer: renderer,
 	}
 }
 
@@ -44,6 +49,16 @@ func (lc *LogsController) Get(w http.ResponseWriter, r *http.Request) {
 
 	response := map[string]interface{}{
 		"logs": logs,
+	}
+
+	// Check if client accepts HTML (browser)
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		err := lc.renderer.Render(w, "logs", response)
+		if err != nil {
+			lc.logger.Errorf("Failed to render logs: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

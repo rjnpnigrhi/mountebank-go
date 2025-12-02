@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,6 +40,8 @@ type Server struct {
 	repository *models.ImposterRepository
 	renderer   *web.Renderer
 }
+
+var startTime = time.Now()
 
 // New creates a new mountebank server
 func New(config *Config) (*Server, error) {
@@ -83,10 +88,15 @@ func (s *Server) createRouter() http.Handler {
 	// Create controllers
 	impostersController := controllers.NewImpostersController(s.repository, s.renderer, s.logger, s.config.AllowInjection)
 	imposterController := controllers.NewImposterController(s.repository, s.logger, s.renderer)
-	logsController := controllers.NewLogsController(s.logger)
+	logsController := controllers.NewLogsController(s.logger, s.renderer)
 
 	// Routes
 	router.HandleFunc("/", s.handleHome).Methods("GET")
+	router.HandleFunc("/feed", s.handleFeed).Methods("GET")
+	router.HandleFunc("/faqs", s.handleStaticView("faqs", "FAQs")).Methods("GET")
+	router.HandleFunc("/support", s.handleStaticView("support", "Support")).Methods("GET")
+	router.PathPrefix("/docs/").HandlerFunc(s.handleDocs)
+	
 	router.HandleFunc("/imposters", impostersController.Get).Methods("GET")
 	router.HandleFunc("/imposters", impostersController.Post).Methods("POST")
 	router.HandleFunc("/imposters", impostersController.Delete).Methods("DELETE")
@@ -195,16 +205,29 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 
 // handleConfig handles the config endpoint
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	cwd, _ := os.Getwd()
+
 	config := map[string]interface{}{
 		"version": "2.9.3-go",
 		"options": map[string]interface{}{
-			"port":           s.config.Port,
-			"host":           s.config.Host,
-			"allowInjection": s.config.AllowInjection,
-			"ipWhitelist":    s.config.IPWhitelist,
+			"port":            s.config.Port,
+			"host":            s.config.Host,
+			"logLevel":        s.config.LogLevel,
+			"allowInjection":  s.config.AllowInjection,
+			"ipWhitelist":     s.config.IPWhitelist,
 		},
 		"process": map[string]interface{}{
-			"platform": "go",
+			"nodeVersion":  runtime.Version(), // Using Go version as nodeVersion for template compatibility
+			"architecture": runtime.GOARCH,
+			"platform":     runtime.GOOS,
+			"rss":          m.Sys,
+			"heapTotal":    m.HeapSys,
+			"heapUsed":     m.HeapAlloc,
+			"uptime":       time.Since(startTime).Seconds(),
+			"cwd":          cwd,
 		},
 	}
 
