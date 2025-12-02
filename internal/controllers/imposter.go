@@ -199,6 +199,47 @@ func (ic *ImposterController) DeleteStub(w http.ResponseWriter, r *http.Request)
 	}))
 }
 
+// PutStub handles PUT /imposters/:id/stubs/:stubIndex
+func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
+	port, err := ic.getPortFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	imposter, err := ic.repository.Get(port)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	vars := mux.Vars(r)
+	stubIndex, err := strconv.Atoi(vars["stubIndex"])
+	if err != nil {
+		http.Error(w, "invalid stub index", http.StatusBadRequest)
+		return
+	}
+
+	var request struct {
+		Stub models.Stub `json:"stub"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := imposter.Stubs().ReplaceAtIndex(request.Stub, stubIndex); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
+		"replayable": true,
+		"requests":   false,
+	}))
+}
+
 // ResetRequests handles DELETE /imposters/:id/savedRequests
 func (ic *ImposterController) ResetRequests(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)

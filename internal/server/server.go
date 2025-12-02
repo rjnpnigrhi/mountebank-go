@@ -95,6 +95,7 @@ func (s *Server) createRouter() http.Handler {
 	router.HandleFunc("/imposters/{id}", imposterController.Delete).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/stubs", imposterController.PutStubs).Methods("PUT")
 	router.HandleFunc("/imposters/{id}/stubs", imposterController.PostStub).Methods("POST")
+	router.HandleFunc("/imposters/{id}/stubs/{stubIndex}", imposterController.PutStub).Methods("PUT")
 	router.HandleFunc("/imposters/{id}/stubs/{stubIndex}", imposterController.DeleteStub).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/savedRequests", imposterController.ResetRequests).Methods("DELETE")
 	
