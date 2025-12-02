@@ -237,6 +237,69 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(config)
 }
 
+// handleFeed handles the feed endpoint
+func (s *Server) handleFeed(w http.ResponseWriter, r *http.Request) {
+	host := r.Host
+	if host == "" {
+		host = "localhost:" + strconv.Itoa(s.config.Port)
+	}
+
+	// Mock release data for now
+	releases := []map[string]interface{}{
+		{
+			"version": "2.9.3-go",
+			"date":    time.Now().Format("2006-01-02"),
+			"view":    "<p>Mountebank Go Port Release</p>",
+		},
+	}
+
+	data := map[string]interface{}{
+		"host":        host,
+		"hasNextPage": false,
+		"nextLink":    "",
+		"releases":    releases,
+	}
+
+	w.Header().Set("Content-Type", "application/atom+xml")
+	err := s.renderer.Render(w, "feed", data)
+	if err != nil {
+		s.logger.Errorf("Failed to render feed: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// handleStaticView returns a handler for a static template
+func (s *Server) handleStaticView(templateName, title string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := s.renderer.Render(w, templateName, map[string]interface{}{
+			"title": title,
+		})
+		if err != nil {
+			s.logger.Errorf("Failed to render %s: %v", templateName, err)
+			http.NotFound(w, r)
+		}
+	}
+}
+
+// handleDocs handles documentation pages
+func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	// Remove .html if present (though links usually don't have it)
+	path = strings.TrimSuffix(path, ".html")
+	
+	// Title is usually the last part of the path, capitalized
+	parts := strings.Split(path, "/")
+	title := parts[len(parts)-1]
+	
+	err := s.renderer.Render(w, path, map[string]interface{}{
+		"title": title,
+	})
+	if err != nil {
+		s.logger.Errorf("Failed to render docs %s: %v", path, err)
+		http.NotFound(w, r)
+	}
+}
+
 // Start starts the server
 func (s *Server) Start() error {
 	s.logger.Infof("mountebank-go now taking orders - point your browser to http://%s:%d/ for help", s.config.Host, s.config.Port)
