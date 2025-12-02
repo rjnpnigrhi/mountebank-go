@@ -1,0 +1,43 @@
+# Docker ignore file for mountebank-go
+
+# Binaries
+mb
+mb-*
+*.exe
+
+# Build artifacts
+*.pid
+*.log
+
+# Go build cache
+.cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+coverage.out
+*.test
+
+# Documentation (included in image)
+# README.md
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.circleci/
+
+# Development
+tmp/
+temp/

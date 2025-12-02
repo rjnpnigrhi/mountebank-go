@@ -1,0 +1,400 @@
+{
+    "info": {
+        "_postman_id": "mountebank-go-collection",
+        "name": "Mountebank Go",
+        "description": "Comprehensive collection for Mountebank Go API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Imposters",
+            "item": [
+                {
+                    "name": "Get All Imposters",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters"
+                            ],
+                            "query": [
+                                {
+                                    "key": "replayable",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "removeProxies",
+                                    "value": "true",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create HTTP Imposter",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"protocol\": \"http\",\n  \"port\": 4545,\n  \"name\": \"Test HTTP Imposter\",\n  \"stubs\": [\n    {\n      \"predicates\": [\n        {\n          \"equals\": {\n            \"path\": \"/test\",\n            \"method\": \"GET\"\n          }\n        }\n      ],\n      \"responses\": [\n        {\n          \"is\": {\n            \"statusCode\": 200,\n            \"headers\": {\n              \"Content-Type\": \"application/json\"\n            },\n            \"body\": { \"message\": \"Hello from HTTP imposter\" }\n          }\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:2525/imposters",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create HTTPS Imposter",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"protocol\": \"https\",\n  \"port\": 8443,\n  \"name\": \"Test HTTPS Imposter\",\n  \"stubs\": [\n    {\n      \"responses\": [\n        {\n          \"is\": {\n            \"statusCode\": 200,\n            \"body\": \"Hello from HTTPS imposter\"\n          }\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:2525/imposters",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Imposter",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Imposter",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete All Imposters",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Overwrite All Imposters",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"protocol\": \"http\",\n      \"port\": 4545,\n      \"stubs\": []\n    },\n    {\n      \"protocol\": \"https\",\n      \"port\": 8443,\n      \"stubs\": []\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:2525/imposters",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Stubs",
+            "item": [
+                {
+                    "name": "Add Stub",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"stub\": {\n    \"predicates\": [\n      {\n        \"equals\": {\n          \"path\": \"/new-stub\"\n        }\n      }\n    ],\n    \"responses\": [\n      {\n        \"is\": {\n          \"statusCode\": 201,\n          \"body\": \"Created via API\"\n        }\n      }\n    ]\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/stubs",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Overwrite Stubs",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"stubs\": [\n    {\n      \"responses\": [\n        {\n          \"is\": {\n            \"statusCode\": 200,\n            \"body\": \"Overwritten stub\"\n          }\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/stubs",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Stub",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/stubs/0",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs",
+                                "0"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Saved Requests",
+            "item": [
+                {
+                    "name": "Delete Saved Requests",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/savedRequests",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "savedRequests"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Config & Logs",
+            "item": [
+                {
+                    "name": "Get Config",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/config",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "config"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/logs",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startIndex",
+                                    "value": "0",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "endIndex",
+                                    "value": "10",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Test Calls",
+            "item": [
+                {
+                    "name": "Call HTTP Imposter",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:4545/test",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "4545",
+                            "path": [
+                                "test"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Call HTTPS Imposter",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "https://localhost:8443/",
+                            "protocol": "https",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "8443",
+                            "path": [
+                                ""
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
+}

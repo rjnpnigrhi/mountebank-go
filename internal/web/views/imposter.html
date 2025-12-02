@@ -1,0 +1,19 @@
+
+
+{{ template "_header.html" . }}
+
+<h1>{{ .imposter.protocol }} Imposter on port {{ .imposter.port }}</h1>
+
+<h2>Requests</h2>
+
+{{ range $request := .imposter.requests }}
+<pre><code>{{ prettyPrint $request }}</code></pre>
+{{ end }}
+
+<h2>Stubs</h2>
+
+{{ range $stub := .imposter.stubs }}
+<pre><code>{{ prettyPrint $stub }}</code></pre>
+{{ end }}
+
+{{ template "_footer.html" . }}

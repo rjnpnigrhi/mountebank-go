@@ -1,0 +1,60 @@
+
+
+{{ template "_header.html" . }}
+
+
+
+<h1>Config</h1>
+
+<table>
+  <tr>
+    <td>version</td>
+    <td>{{ .version }}</td>
+  </tr>
+{{ range $key, $value := .options }}
+  <tr>
+    <td>{{ $key }}</td>
+    <td>{{ if isJSONObject $value }}<pre><code>{{ end }}{{ prettyPrint $value }}{{ if isJSONObject $value }}</code></pre>{{ end }}
+    </td>
+  </tr>
+{{ end }}
+</table>
+
+<h2>Process Information</h2>
+
+<table>
+  <tr>
+    <td>node version</td>
+    <td>{{ .process.nodeVersion }}</td>
+  </tr>
+  <tr>
+    <td>architecture</td>
+    <td>{{ .process.architecture }}</td>
+  </tr>
+  <tr>
+    <td>platform</td>
+    <td>{{ .process.platform }}</td>
+  </tr>
+  <tr>
+    <td>rss</td>
+    <td>{{ .process.rss }}</td>
+  </tr>
+  <tr>
+    <td>heapTotal</td>
+    <td>{{ .process.heapTotal }}</td>
+  </tr>
+  <tr>
+    <td>heapUsed</td>
+    <td>{{ .process.heapUsed }}</td>
+  </tr>
+  <tr>
+    <td>uptime</td>
+    <td>{{ .process.uptime }}</td>
+  </tr>
+  <tr>
+    <td>cwd</td>
+    <td>{{ .process.cwd }}</td>
+  </tr>
+</table>
+
+{{ template "_footer.html" . }}

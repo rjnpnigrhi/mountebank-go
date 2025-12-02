@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mountebank-Go Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="https://www.mbtest.org/images/logo.png" alt="Mountebank Logo" onerror="this.style.display='none'">
+                <h1>mountebank-go</h1>
+            </div>
+            <div class="status">
+                <span class="badge success">Running</span>
+            </div>
+        </header>
+
+        <main>
+            <section class="imposters-section">
+                <div class="section-header">
+                    <h2>Active Imposters</h2>
+                    <button id="refreshBtn" class="btn primary">Refresh</button>
+                </div>
+                <div id="impostersList" class="imposters-grid">
+                    <!-- Imposters will be populated here -->
+                    <div class="loading">Loading imposters...</div>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Server Configuration</h2>
+                <div id="serverConfig" class="config-card">
+                    <!-- Config will be populated here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Mountebank-Go Port | <a href="https://github.com/mountebank-testing/mountebank-go" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

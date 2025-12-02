@@ -1,0 +1,8 @@
+<tr id='imposter-{{ .imposter.port }}'>
+  <td style='width: 15em;'><a href='{{ .imposter._links.self.href }}'>
+    {{ if .imposter.name }}{{ .imposter.name }}{{ else }}{{ .imposter.protocol }}:{{ .imposter.port }}{{ end }}
+  </a></td>
+  <td style='width: 6em;'>{{ .imposter.protocol }}</td>
+  <td style='width: 5em;'>{{ .imposter.port }}</td>
+  <td style='width: 6em;'>{{ .imposter.numberOfRequests }}</td>
+</tr>

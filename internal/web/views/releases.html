@@ -1,0 +1,23 @@
+
+
+{{ template "_header.html" . }}
+
+<h1>Releases</h1>
+
+<p>Below are the releases starting with the most recent.  Subscribe to the
+<a href='/feed'>ATOM feed</a> to stay up to date with future releases.</p>
+
+<table>
+  <tr>
+    <th>Version</th>
+    <th>Release Date</th>
+  </tr>
+{{ range $release := .releases }}
+  <tr>
+    <td><a href='/releases/{{ .release.version }}'>{{ .release.version }}</a></td>
+    <td>{{ .release.date }}</td>
+  </tr>
+{{ end }}
+</table>
+
+{{ template "_footer.html" . }}
