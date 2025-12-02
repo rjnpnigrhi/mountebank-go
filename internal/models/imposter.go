@@ -1,11 +1,9 @@
 package models
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 
-	"github.com/dop251/goja"
 	"github.com/mountebank-testing/mountebank-go/internal/util"
 )
 
@@ -231,10 +229,39 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	}
 
 	// Include stubs
-	info.Stubs = imp.stubs.GetAll()
+	allStubs := imp.stubs.GetAll()
+	
+	// Filter stubs based on options
+	replayable := false
+	if options != nil && options["replayable"] == true {
+		replayable = true
+	}
+	
+	removeProxies := false
+	if options != nil && options["removeProxies"] == true {
+		removeProxies = true
+	}
+
+	filteredStubs := make([]Stub, 0, len(allStubs))
+	for _, stub := range allStubs {
+		if removeProxies && stub.IsProxy {
+			continue
+		}
+		
+		if replayable {
+			// Create a copy to remove matches
+			stubCopy := stub
+			stubCopy.Matches = nil
+			filteredStubs = append(filteredStubs, stubCopy)
+		} else {
+			filteredStubs = append(filteredStubs, stub)
+		}
+	}
+	info.Stubs = filteredStubs
 
 	// Include requests if requested
-	if options == nil || options["requests"] == true {
+	// If replayable is true, requests should be removed regardless of requests option
+	if !replayable && (options == nil || options["requests"] == true) {
 		info.Requests = imp.stubs.LoadRequests()
 	}
 
@@ -258,6 +285,7 @@ func (imp *Imposter) Stubs() *StubRepository {
 
 // executeMiddleware executes global middleware
 func (imp *Imposter) executeMiddleware(request *Request) (*Response, error) {
+	/*
 	if imp.middleware == "" {
 		return nil, nil
 	}
@@ -267,54 +295,7 @@ func (imp *Imposter) executeMiddleware(request *Request) (*Response, error) {
 	}
 
 	vm := goja.New()
-
-	// Create JS-compatible logger
-	jsLogger := map[string]interface{}{
-		"debug": func(msg string, args ...interface{}) { imp.logger.Debugf(msg, args...) },
-		"info":  func(msg string, args ...interface{}) { imp.logger.Infof(msg, args...) },
-		"warn":  func(msg string, args ...interface{}) { imp.logger.Warnf(msg, args...) },
-		"error": func(msg string, args ...interface{}) { imp.logger.Errorf(msg, args...) },
-	}
-
-	// Prepare config object
-	requestMap := make(map[string]interface{})
-	data, _ := json.Marshal(request)
-	json.Unmarshal(data, &requestMap)
-
-	config := map[string]interface{}{
-		"request": requestMap,
-		"logger":  jsLogger,
-		"state":   imp.state,
-	}
-
-	vm.Set("config", config)
-	vm.Set("logger", jsLogger)
-
-	// Wrap code in a function call
-	script := fmt.Sprintf("(%s)(config, logger)", imp.middleware)
-
-	val, err := vm.RunString(script)
-	if err != nil {
-		imp.logger.Errorf("Middleware error: %v", err)
-		return nil, nil // Continue processing on error
-	}
-
-	// Check if middleware returned a response
-	if val != nil && !util.IsUndefined(val) && !util.IsNull(val) {
-		if exported, ok := val.Export().(map[string]interface{}); ok {
-			// If it looks like a response (has statusCode, body, etc), return it
-			response := &Response{}
-			data, _ := json.Marshal(exported)
-			json.Unmarshal(data, response)
-			return response, nil
-		}
-	}
-
-	// Update request from config.request (in case it was modified)
-	if reqObj, ok := config["request"].(map[string]interface{}); ok {
-		data, _ := json.Marshal(reqObj)
-		json.Unmarshal(data, request)
-	}
-
-	return nil, nil
+    // ...
+    */
+    return nil, nil
 }

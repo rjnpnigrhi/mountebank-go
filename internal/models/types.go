@@ -165,10 +165,23 @@ type FaultConfig struct {
 	Fault string `json:"fault"`
 }
 
+// Match represents a debug match entry
+type Match struct {
+	Timestamp      string          `json:"timestamp"`
+	Request        *Request        `json:"request"`
+	Response       *Response       `json:"response"`
+	ResponseConfig *ResponseConfig `json:"responseConfig"`
+	Duration       int             `json:"duration"`
+}
+
 // Stub represents a stub with predicates and responses
 type Stub struct {
 	Predicates []Predicate      `json:"predicates,omitempty"`
 	Responses  []ResponseConfig `json:"responses"`
+	Matches    []Match          `json:"matches,omitempty"`
+	
+	// Internal
+	IsProxy    bool             `json:"-"`
 }
 
 // ImposterConfig represents the configuration for creating an imposter
