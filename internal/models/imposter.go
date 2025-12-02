@@ -26,6 +26,7 @@ type Imposter struct {
 	behaviorExecutor   *BehaviorExecutor
 	defaultResponse    *Response
 	middleware         string
+	allowInjection     bool
 }
 
 // ImposterInfo contains information about an imposter
@@ -41,7 +42,7 @@ type ImposterInfo struct {
 }
 
 // NewImposter creates a new imposter
-func NewImposter(config *ImposterConfig, logger *util.Logger, closeFunc func(func()) error) *Imposter {
+func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection bool, closeFunc func(func()) error) *Imposter {
 	state := make(map[string]interface{})
 	stubs := NewStubRepository(config.Stubs, logger)
 	encoding := "utf8"
@@ -63,10 +64,11 @@ func NewImposter(config *ImposterConfig, logger *util.Logger, closeFunc func(fun
 		encoding:          encoding,
 		defaultResponse:   config.DefaultResponse,
 		middleware:        config.Middleware,
+		allowInjection:    allowInjection,
 	}
 
-	imp.predicateEvaluator = NewPredicateEvaluator(encoding, logger, state)
-	imp.behaviorExecutor = NewBehaviorExecutor(logger, state)
+	imp.predicateEvaluator = NewPredicateEvaluator(encoding, logger, state, allowInjection)
+	imp.behaviorExecutor = NewBehaviorExecutor(logger, state, allowInjection)
 
 	return imp
 }
@@ -157,6 +159,9 @@ func (imp *Imposter) resolveResponse(config *ResponseConfig, request *Request, r
 		}
 	} else if config.Inject != "" {
 		// Injected response
+		if !imp.allowInjection {
+			return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
+		}
 		// TODO: Implement JavaScript injection
 		imp.logger.Warn("Inject responses not yet implemented")
 		response = &Response{
@@ -255,6 +260,10 @@ func (imp *Imposter) Stubs() *StubRepository {
 func (imp *Imposter) executeMiddleware(request *Request) (*Response, error) {
 	if imp.middleware == "" {
 		return nil, nil
+	}
+
+	if !imp.allowInjection {
+		return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
 	}
 
 	vm := goja.New()

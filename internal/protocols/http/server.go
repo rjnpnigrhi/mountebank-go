@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/mountebank-testing/mountebank-go/internal/models"
@@ -100,7 +101,21 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	response, err := s.getResponse(request, nil)
 	if err != nil {
 		s.logger.Errorf("Error getting response: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		if strings.Contains(err.Error(), "invalid injection") {
+			// Return JSON error to match Mountebank behavior
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"errors": []map[string]interface{}{
+					{
+						"code":    "invalid injection",
+						"message": err.Error(),
+					},
+				},
+			})
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 

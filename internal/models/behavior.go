@@ -15,15 +15,17 @@ import (
 
 // BehaviorExecutor executes response behaviors
 type BehaviorExecutor struct {
-	logger *util.Logger
-	state  map[string]interface{}
+	logger         *util.Logger
+	state          map[string]interface{}
+	allowInjection bool
 }
 
 // NewBehaviorExecutor creates a new behavior executor
-func NewBehaviorExecutor(logger *util.Logger, state map[string]interface{}) *BehaviorExecutor {
+func NewBehaviorExecutor(logger *util.Logger, state map[string]interface{}, allowInjection bool) *BehaviorExecutor {
 	return &BehaviorExecutor{
-		logger: logger,
-		state:  state,
+		logger:         logger,
+		state:          state,
+		allowInjection: allowInjection,
 	}
 }
 
@@ -77,6 +79,10 @@ func (be *BehaviorExecutor) executeWait(response *Response, wait *WaitBehavior) 
 
 // executeDecorate modifies the response using JavaScript
 func (be *BehaviorExecutor) executeDecorate(request *Request, response *Response, code string) (*Response, error) {
+	if !be.allowInjection {
+		return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
+	}
+
 	vm := goja.New()
 
 	// Create JS-compatible logger
@@ -224,6 +230,10 @@ func (be *BehaviorExecutor) executeLookup(request *Request, response *Response, 
 
 // executeShellTransform transforms response using shell command
 func (be *BehaviorExecutor) executeShellTransform(request *Request, response *Response, command string) (*Response, error) {
+	if !be.allowInjection {
+		return nil, fmt.Errorf("invalid injection: Shell injection is not allowed unless mb is run with the --allowInjection flag")
+	}
+
 	// TODO: Implement shell transform
 	be.logger.Warn("ShellTransform behavior not yet implemented")
 	return response, nil

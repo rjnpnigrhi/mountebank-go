@@ -16,18 +16,70 @@ import (
 
 // ImpostersController handles imposter collection endpoints
 type ImpostersController struct {
-	repository *models.ImposterRepository
-	renderer   *web.Renderer
-	logger     *util.Logger
+	repository     *models.ImposterRepository
+	renderer       *web.Renderer
+	logger         *util.Logger
+	allowInjection bool
 }
 
 // NewImpostersController creates a new imposters controller
-func NewImpostersController(repository *models.ImposterRepository, renderer *web.Renderer, logger *util.Logger) *ImpostersController {
+func NewImpostersController(repository *models.ImposterRepository, renderer *web.Renderer, logger *util.Logger, allowInjection bool) *ImpostersController {
 	return &ImpostersController{
-		repository: repository,
-		renderer:   renderer,
-		logger:     logger,
+		repository:     repository,
+		renderer:       renderer,
+		logger:         logger,
+		allowInjection: allowInjection,
 	}
+}
+
+// ... (Get, Post, Delete, Put, createImposter remain same)
+
+// createHTTPImposter creates an HTTP imposter
+func (ic *ImpostersController) createHTTPImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
+	// Create a temporary imposter to get the response function
+	var imposter *models.Imposter
+
+	// Create HTTP server
+	server, err := httpproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
+		return imposter.GetResponseFor(request, details)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create imposter with the server's close function
+	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close)
+	
+	// Update port if it was auto-assigned
+	if config.Port == 0 {
+		config.Port = server.Port()
+	}
+
+	return imposter, nil
+}
+
+// createHTTPSImposter creates an HTTPS imposter
+func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
+	// Create a temporary imposter to get the response function
+	var imposter *models.Imposter
+
+	// Create HTTPS server
+	server, err := httpsproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
+		return imposter.GetResponseFor(request, details)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create imposter with the server's close function
+	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close)
+	
+	// Update port if it was auto-assigned
+	if config.Port == 0 {
+		config.Port = server.Port()
+	}
+
+	return imposter, nil
 }
 
 // Get handles GET /imposters
@@ -230,50 +282,4 @@ func (ic *ImpostersController) createImposter(config *models.ImposterConfig) (*m
 	}
 }
 
-// createHTTPImposter creates an HTTP imposter
-func (ic *ImpostersController) createHTTPImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
-	// Create a temporary imposter to get the response function
-	var imposter *models.Imposter
 
-	// Create HTTP server
-	server, err := httpproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
-		return imposter.GetResponseFor(request, details)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, server.Close)
-	
-	// Update port if it was auto-assigned
-	if config.Port == 0 {
-		config.Port = server.Port()
-	}
-
-	return imposter, nil
-}
-
-// createHTTPSImposter creates an HTTPS imposter
-func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
-	// Create a temporary imposter to get the response function
-	var imposter *models.Imposter
-
-	// Create HTTPS server
-	server, err := httpsproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
-		return imposter.GetResponseFor(request, details)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, server.Close)
-	
-	// Update port if it was auto-assigned
-	if config.Port == 0 {
-		config.Port = server.Port()
-	}
-
-	return imposter, nil
-}

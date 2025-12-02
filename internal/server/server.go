@@ -81,7 +81,7 @@ func (s *Server) createRouter() http.Handler {
 	router := mux.NewRouter()
 
 	// Create controllers
-	impostersController := controllers.NewImpostersController(s.repository, s.renderer, s.logger)
+	impostersController := controllers.NewImpostersController(s.repository, s.renderer, s.logger, s.config.AllowInjection)
 	imposterController := controllers.NewImposterController(s.repository, s.logger)
 	logsController := controllers.NewLogsController(s.logger)
 
@@ -293,7 +293,7 @@ func (s *Server) createHTTPImposter(config *models.ImposterConfig, logger *util.
 	}
 
 	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, server.Close)
+	imposter = models.NewImposter(config, logger, s.config.AllowInjection, server.Close)
 	
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
