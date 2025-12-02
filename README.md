@@ -1,6 +1,6 @@
 # Mountebank Go
 
-A Go port of [mountebank](http://www.mbtest.org/), the open source service virtualization tool.
+A Go port of [mountebank](https://github.com/mountebank-testing/mountebank), the open source service virtualization tool.
 
 ## Overview
 
