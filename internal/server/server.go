@@ -269,7 +269,7 @@ func (s *Server) handleFeed(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleStaticView returns a handler for a static template
-func (s *Server) handleStaticView(templateName, title string) http.HandlerFunc {
+func (s *Server) handleStaticView(templateName, title string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := s.renderer.Render(w, templateName, map[string]interface{}{
 			"title": title,

@@ -12,57 +12,54 @@
 
 <script type='text/javascript'>
   $(document).ready(function () {
-    var nextIndex = {{ len .logs }
-  },
-    intervalId,
-    topOfTail = $('#tail').position().top,
-    tailset = 5;
+    var nextIndex = {{ .logsLength }},
+        intervalId,
+        topOfTail = $('#tail').position().top,
+        tailset = 5;
 
-  $(document).on('scroll', window, animateTail);
+    $(document).on('scroll', window, animateTail);
 
+    function findTop() {
+      return $(window).scrollTop() >= topOfTail ? $(window).scrollTop() - topOfTail + tailset : 0;
+    }
 
+    function scrollToBottom() {
+      $('html, body').animate({ scrollTop: $(document).height() }, 200);
+      $('#tail').css('top', findTop());
+    }
 
-  function findTop() {
-    return $(window).scrollTop() >= topOfTail ? $(window).scrollTop() - topOfTail + tailset : 0;
-  }
+    function getLatestLogEntries() {
+      $.getJSON('/logs?startIndex=' + nextIndex, json => {
+        var logs = json.logs;
+        for (let i = 0; i < logs.length; i++) {
+          $('#logs code').append(formatLogEntry(logs[i]) + '\n');
+        }
+        nextIndex += json.logs.length;
+        scrollToBottom();
+      });
+    }
 
-  function scrollToBottom() {
-    $('html, body').animate({ scrollTop: $(document).height() }, 200);
-    $('#tail').css('top', findTop());
-  }
+    function animateTail() {
+      $('#tail').css('top', findTop());
+    }
 
-  function getLatestLogEntries() {
-    $.getJSON('/logs?startIndex=' + nextIndex, json => {
-      var logs = json.logs;
-      for (let i = 0; i < logs.length; i++) {
-        $('#logs code').append(formatLogEntry(logs[i]) + '\n');
+    $('#tail').click(function () {
+      var currentLeft = parseFloat($(this).css('left').replace('px', ''));
+
+      if (this.tailing) {
+        this.tailing = false;
+        $('#tail span').text('Follow log');
+        $(this).css('left', (currentLeft + 12) + 'px');
+        clearInterval(intervalId);
       }
-      nextIndex += json.logs.length;
-      scrollToBottom();
-    });
-  }
-
-  function animateTail() {
-    $('#tail').css('top', findTop());
-  }
-
-  $('#tail').click(function () {
-    var currentLeft = parseFloat($(this).css('left').replace('px', ''));
-
-    if (this.tailing) {
-      this.tailing = false;
-      $('#tail span').text('Follow log');
-      $(this).css('left', (currentLeft + 12) + 'px');
-      clearInterval(intervalId);
-    }
-    else {
-      this.tailing = true;
-      $('#tail span').text('Unfollow log');
-      $(this).css('left', (currentLeft - 12) + 'px');
-      intervalId = setInterval(getLatestLogEntries, 250);
-      scrollToBottom();
-    }
-  })
+      else {
+        this.tailing = true;
+        $('#tail span').text('Unfollow log');
+        $(this).css('left', (currentLeft - 12) + 'px');
+        intervalId = setInterval(getLatestLogEntries, 250);
+        scrollToBottom();
+      }
+    })
   });
 </script>
 

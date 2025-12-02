@@ -48,7 +48,8 @@ func (lc *LogsController) Get(w http.ResponseWriter, r *http.Request) {
 	logs := lc.logger.GetEntries(startIndex, endIndex)
 
 	response := map[string]interface{}{
-		"logs": logs,
+		"logs":       logs,
+		"logsLength": len(logs),
 	}
 
 	// Check if client accepts HTML (browser)
