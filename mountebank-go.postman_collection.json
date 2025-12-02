@@ -300,6 +300,27 @@
                         }
                     },
                     "response": []
+                },
+                {
+                    "name": "Delete Saved Proxy Responses",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/savedProxyResponses",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "savedProxyResponses"
+                            ]
+                        }
+                    },
+                    "response": []
                 }
             ]
         },

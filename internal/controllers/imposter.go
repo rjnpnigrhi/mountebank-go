@@ -264,6 +264,32 @@ func (ic *ImposterController) ResetRequests(w http.ResponseWriter, r *http.Reque
 	}))
 }
 
+// DeleteSavedProxyResponses handles DELETE /imposters/:id/savedProxyResponses
+func (ic *ImposterController) DeleteSavedProxyResponses(w http.ResponseWriter, r *http.Request) {
+	port, err := ic.getPortFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	imposter, err := ic.repository.Get(port)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err := imposter.DeleteSavedProxyResponses(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
+		"replayable": true,
+		"requests":   false,
+	}))
+}
+
 // getPortFromRequest extracts the port from the request
 func (ic *ImposterController) getPortFromRequest(r *http.Request) (int, error) {
 	vars := mux.Vars(r)

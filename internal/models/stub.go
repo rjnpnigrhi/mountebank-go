@@ -139,6 +139,16 @@ func (sr *StubRepository) DeleteSavedRequests() error {
 	return nil
 }
 
+// DeleteSavedProxyResponses removes all stubs recorded by a proxy
+func (sr *StubRepository) DeleteSavedProxyResponses() error {
+	sr.mu.Lock()
+	defer sr.mu.Unlock()
+	
+	// TODO: Implement proxy stub tracking and removal
+	// For now, since we don't have proxy implemented, there are no proxy stubs to remove
+	return nil
+}
+
 // StubMatch represents the result of a stub match
 type StubMatch struct {
 	Success   bool

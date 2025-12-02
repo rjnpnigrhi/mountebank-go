@@ -206,6 +206,11 @@ func (imp *Imposter) ResetRequests() error {
 	return imp.stubs.DeleteSavedRequests()
 }
 
+// DeleteSavedProxyResponses removes all stubs recorded by a proxy
+func (imp *Imposter) DeleteSavedProxyResponses() error {
+	return imp.stubs.DeleteSavedProxyResponses()
+}
+
 // ToJSON converts the imposter to JSON format
 func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	imp.mu.RLock()
