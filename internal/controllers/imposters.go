@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 
 	"strings"
 
@@ -86,6 +87,12 @@ func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig
 // Get handles GET /imposters
 func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 	imposters := ic.repository.GetAll()
+
+	// Sort imposters by port
+	sort.Slice(imposters, func(i, j int) bool {
+		return imposters[i].Port() < imposters[j].Port()
+	})
+
 
 	    // Parse query parameters
     replayable := r.URL.Query().Get("replayable") == "true"
