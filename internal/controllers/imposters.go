@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"strings"
@@ -136,21 +137,35 @@ func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 
 // Put handles PUT /imposters
 func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		Imposters []models.ImposterConfig `json:"imposters"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	// Read body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	var impostersConfig []models.ImposterConfig
+
+	// Try to unmarshal as wrapped object
+	var wrappedRequest struct {
+		Imposters []models.ImposterConfig `json:"imposters"`
+	}
+	if err := json.Unmarshal(body, &wrappedRequest); err == nil && len(wrappedRequest.Imposters) > 0 {
+		impostersConfig = wrappedRequest.Imposters
+	} else {
+		// Try to unmarshal as raw array
+		if err := json.Unmarshal(body, &impostersConfig); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Delete all existing imposters
 	ic.repository.DeleteAll()
 
 	// Create new imposters
-	imposters := make([]*models.Imposter, 0, len(request.Imposters))
-	for _, config := range request.Imposters {
+	imposters := make([]*models.Imposter, 0, len(impostersConfig))
+	for _, config := range impostersConfig {
 		imposter, err := ic.createImposter(&config)
 		if err != nil {
 			ic.logger.Errorf("Error creating imposter: %v", err)
