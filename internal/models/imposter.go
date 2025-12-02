@@ -220,10 +220,8 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		Middleware:       imp.middleware,
 	}
 
-	// Include stubs if requested
-	if options == nil || options["replayable"] == true {
-		info.Stubs = imp.stubs.GetAll()
-	}
+	// Include stubs
+	info.Stubs = imp.stubs.GetAll()
 
 	// Include requests if requested
 	if options == nil || options["requests"] == true {
