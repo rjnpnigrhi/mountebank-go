@@ -228,9 +228,16 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		Middleware:       imp.middleware,
 	}
 
-	// Include stubs
-	allStubs := imp.stubs.GetAll()
-	
+	// Include stubs if requested
+	includeStubs := true
+	if options != nil {
+		if val, ok := options["stubs"]; ok {
+			if b, ok := val.(bool); ok {
+				includeStubs = b
+			}
+		}
+	}
+
 	// Filter stubs based on options
 	replayable := false
 	if options != nil && options["replayable"] == true {
@@ -242,22 +249,26 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		removeProxies = true
 	}
 
-	filteredStubs := make([]Stub, 0, len(allStubs))
-	for _, stub := range allStubs {
-		if removeProxies && stub.IsProxy {
-			continue
+	if includeStubs {
+		allStubs := imp.stubs.GetAll()
+
+		filteredStubs := make([]Stub, 0, len(allStubs))
+		for _, stub := range allStubs {
+			if removeProxies && stub.IsProxy {
+				continue
+			}
+			
+			if replayable {
+				// Create a copy to remove matches
+				stubCopy := stub
+				stubCopy.Matches = nil
+				filteredStubs = append(filteredStubs, stubCopy)
+			} else {
+				filteredStubs = append(filteredStubs, stub)
+			}
 		}
-		
-		if replayable {
-			// Create a copy to remove matches
-			stubCopy := stub
-			stubCopy.Matches = nil
-			filteredStubs = append(filteredStubs, stubCopy)
-		} else {
-			filteredStubs = append(filteredStubs, stub)
-		}
+		info.Stubs = filteredStubs
 	}
-	info.Stubs = filteredStubs
 
 	// Include requests if requested
 	// If replayable is true, requests should be removed regardless of requests option

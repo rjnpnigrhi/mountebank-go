@@ -86,44 +86,49 @@ func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig
 func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 	imposters := ic.repository.GetAll()
 
-	// Parse query parameters
-	replayable := r.URL.Query().Get("replayable") == "true"
-	removeProxies := r.URL.Query().Get("removeProxies") == "true"
+	    // Parse query parameters
+    replayable := r.URL.Query().Get("replayable") == "true"
+    removeProxies := r.URL.Query().Get("removeProxies") == "true"
+    
+    // By default, list endpoint does not include stubs unless replayable is true
+    includeStubs := replayable
 
-	// Check if client accepts HTML (browser)
-	if strings.Contains(r.Header.Get("Accept"), "text/html") {
-		// Convert to simple JSON for template
-		imposterList := make([]interface{}, 0, len(imposters))
-		for _, imposter := range imposters {
-			imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-				"replayable":    replayable,
-				"removeProxies": removeProxies,
-				"requests":      false,
-			}))
-		}
+    // Check if client accepts HTML (browser)
+    if strings.Contains(r.Header.Get("Accept"), "text/html") {
+        // Convert to simple JSON for template
+        imposterList := make([]interface{}, 0, len(imposters))
+        for _, imposter := range imposters {
+            imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
+                "replayable":    replayable,
+                "removeProxies": removeProxies,
+                "requests":      false,
+                "stubs":         includeStubs,
+            }))
+        }
 
-		err := ic.renderer.Render(w, "imposters", map[string]interface{}{
-			"imposters": imposterList,
-		})
-		if err != nil {
-			ic.logger.Errorf("Failed to render imposters: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-		return
-	}
+        err := ic.renderer.Render(w, "imposters", map[string]interface{}{
+            "imposters": imposterList,
+        })
+        if err != nil {
+            ic.logger.Errorf("Failed to render imposters: %v", err)
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        }
+        return
+    }
 
-	// Convert to JSON format
-	result := make(map[string]interface{})
-	result["imposters"] = make([]interface{}, 0)
+    // Convert to JSON format
+    result := make(map[string]interface{})
+    result["imposters"] = make([]interface{}, 0)
 
-	imposterList := make([]interface{}, 0, len(imposters))
-	for _, imposter := range imposters {
-		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"replayable":    replayable,
-			"removeProxies": removeProxies,
-			"requests":      false,
-		}))
-	}
+    imposterList := make([]interface{}, 0, len(imposters))
+    for _, imposter := range imposters {
+        imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
+            "replayable":    replayable,
+            "removeProxies": removeProxies,
+            "requests":      false,
+            "stubs":         includeStubs,
+        }))
+    }
 
 	result["imposters"] = imposterList
 
