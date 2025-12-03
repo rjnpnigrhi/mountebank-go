@@ -12,14 +12,24 @@ type ImposterRepository struct {
 	imposters map[int]*Imposter
 	mu        sync.RWMutex
 	logger    *util.Logger
+	dataStore DataStore
 }
 
 // NewImposterRepository creates a new imposter repository
-func NewImposterRepository(logger *util.Logger) *ImposterRepository {
+func NewImposterRepository(logger *util.Logger, dataStore DataStore) *ImposterRepository {
 	return &ImposterRepository{
 		imposters: make(map[int]*Imposter),
 		logger:    logger,
+		dataStore: dataStore,
 	}
+}
+
+// Save persists the imposter to the data store
+func (ir *ImposterRepository) Save(imposter *Imposter) error {
+	if ir.dataStore == nil {
+		return nil
+	}
+	return ir.dataStore.Save(imposter)
 }
 
 // Add adds an imposter to the repository
@@ -33,6 +43,12 @@ func (ir *ImposterRepository) Add(imposter *Imposter) error {
 	}
 
 	ir.imposters[port] = imposter
+	
+	// Save to data store
+	if err := ir.Save(imposter); err != nil {
+		ir.logger.Errorf("Failed to save imposter on port %d to data store: %v", port, err)
+	}
+
 	ir.logger.Infof("Added imposter on port %d", port)
 
 	return nil
@@ -67,6 +83,14 @@ func (ir *ImposterRepository) Delete(port int) (*Imposter, error) {
 	}
 
 	delete(ir.imposters, port)
+	
+	// Remove from data store
+	if ir.dataStore != nil {
+		if err := ir.dataStore.Delete(port); err != nil {
+			ir.logger.Errorf("Failed to remove imposter on port %d from data store: %v", port, err)
+		}
+	}
+
 	ir.logger.Infof("Deleted imposter on port %d", port)
 
 	return imposter, nil
@@ -89,6 +113,14 @@ func (ir *ImposterRepository) DeleteAll() ([]*Imposter, error) {
 	}
 
 	ir.imposters = make(map[int]*Imposter)
+	
+	// Remove all from data store
+	if ir.dataStore != nil {
+		if err := ir.dataStore.DeleteAll(); err != nil {
+			ir.logger.Errorf("Failed to remove all imposters from data store: %v", err)
+		}
+	}
+
 	ir.logger.Info("Deleted all imposters")
 
 	return imposters, nil

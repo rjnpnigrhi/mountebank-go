@@ -22,15 +22,17 @@ type ImpostersController struct {
 	renderer       *web.Renderer
 	logger         *util.Logger
 	allowInjection bool
+	debug          bool
 }
 
 // NewImpostersController creates a new imposters controller
-func NewImpostersController(repository *models.ImposterRepository, renderer *web.Renderer, logger *util.Logger, allowInjection bool) *ImpostersController {
+func NewImpostersController(repository *models.ImposterRepository, renderer *web.Renderer, logger *util.Logger, allowInjection bool, debug bool) *ImpostersController {
 	return &ImpostersController{
 		repository:     repository,
 		renderer:       renderer,
 		logger:         logger,
 		allowInjection: allowInjection,
+		debug:          debug,
 	}
 }
 
@@ -49,8 +51,13 @@ func (ic *ImpostersController) createHTTPImposter(config *models.ImposterConfig,
 		return nil, err
 	}
 
+	// Define save function
+	saveFunc := func(imp *models.Imposter) error {
+		return ic.repository.Save(imp)
+	}
+
 	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close)
+	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close, saveFunc)
 	
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
@@ -73,8 +80,13 @@ func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig
 		return nil, err
 	}
 
+	// Define save function
+	saveFunc := func(imp *models.Imposter) error {
+		return ic.repository.Save(imp)
+	}
+
 	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close)
+	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close, saveFunc)
 	
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
@@ -110,7 +122,8 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
                 "replayable":    replayable,
                 "removeProxies": removeProxies,
                 "requests":      false,
-                "stubs":         includeStubs,
+				"stubs":         includeStubs,
+				"debug":         ic.debug,
             })
             
             // Convert struct to map for template access
@@ -146,6 +159,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
             "removeProxies": removeProxies,
             "requests":      false,
             "stubs":         includeStubs,
+            "debug":         ic.debug,
         }))
     }
 

@@ -45,7 +45,7 @@ func Create(config *models.ImposterConfig, logger *util.Logger, getResponse func
 		listener.Close()
 	}
 
-	stubs := models.NewStubRepository(config.Stubs, logger)
+	stubs := models.NewStubRepository(config.Stubs, config.Requests, logger, nil)
 
 	s := &Server{
 		port:        port,

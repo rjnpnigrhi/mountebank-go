@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -83,7 +84,7 @@ func (l *Logger) GetEntries(startIndex, endIndex int) []LogEntry {
 }
 
 // NewLogger creates a new logger instance
-func NewLogger(level string) *Logger {
+func NewLogger(level string, logFile string, noLogFile bool) *Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
@@ -103,7 +104,17 @@ func NewLogger(level string) *Logger {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	logger.SetOutput(os.Stdout)
+	if !noLogFile && logFile != "" {
+		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err == nil {
+			logger.SetOutput(io.MultiWriter(os.Stdout, file))
+		} else {
+			fmt.Printf("Failed to open log file %s: %v\n", logFile, err)
+			logger.SetOutput(os.Stdout)
+		}
+	} else {
+		logger.SetOutput(os.Stdout)
+	}
 
 	hook := &LogHook{
 		Entries: make([]LogEntry, 0),

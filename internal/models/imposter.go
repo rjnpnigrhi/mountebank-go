@@ -25,6 +25,15 @@ type Imposter struct {
 	defaultResponse    *Response
 	middleware         string
 	allowInjection     bool
+	saveFunc           func(*Imposter) error
+	
+	// Config fields for persistence
+	allowCORS          bool
+	key                string
+	cert               string
+	mutualAuth         bool
+	mode               string
+	host               string
 }
 
 // ImposterInfo contains information about an imposter
@@ -37,6 +46,13 @@ type ImposterInfo struct {
 	Requests         []*Request             `json:"requests,omitempty"`
 	Stubs            []Stub                 `json:"stubs,omitempty"`
 	Middleware       string                 `json:"middleware,omitempty"`
+	DefaultResponse  *Response              `json:"defaultResponse,omitempty"`
+	AllowCORS        bool                   `json:"allowCORS,omitempty"`
+	Key              string                 `json:"key,omitempty"`
+	Cert             string                 `json:"cert,omitempty"`
+	MutualAuth       bool                   `json:"mutualAuth,omitempty"`
+	Mode             string                 `json:"mode,omitempty"`
+	Host             string                 `json:"host,omitempty"`
 	Links            *ImposterLinks         `json:"_links,omitempty"`
 }
 
@@ -52,9 +68,8 @@ type Link struct {
 }
 
 // NewImposter creates a new imposter
-func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection bool, closeFunc func(func()) error) *Imposter {
+func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection bool, closeFunc func(func()) error, saveFunc func(*Imposter) error) *Imposter {
 	state := make(map[string]interface{})
-	stubs := NewStubRepository(config.Stubs, logger)
 	encoding := "utf8"
 	
 	if config.Mode == "binary" {
@@ -65,7 +80,6 @@ func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection boo
 		port:              config.Port,
 		protocol:          config.Protocol,
 		name:              config.Name,
-		stubs:             stubs,
 		logger:            logger,
 		state:             state,
 		numberOfRequests:  0,
@@ -75,7 +89,25 @@ func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection boo
 		defaultResponse:   config.DefaultResponse,
 		middleware:        config.Middleware,
 		allowInjection:    allowInjection,
+		saveFunc:          saveFunc,
+		allowCORS:         config.AllowCORS,
+		key:               config.Key,
+		cert:              config.Cert,
+		mutualAuth:        config.MutualAuth,
+		mode:              config.Mode,
+		host:              config.Host,
 	}
+
+	onUpdate := func() {
+		if saveFunc != nil {
+			if err := saveFunc(imp); err != nil {
+				logger.Errorf("Failed to save imposter: %v", err)
+			}
+		}
+	}
+
+	stubs := NewStubRepository(config.Stubs, config.Requests, logger, onUpdate)
+	imp.stubs = stubs
 
 	imp.predicateEvaluator = NewPredicateEvaluator(encoding, logger, state, allowInjection)
 	imp.behaviorExecutor = NewBehaviorExecutor(logger, state, allowInjection)
@@ -238,6 +270,13 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		NumberOfRequests: imp.numberOfRequests,
 		RecordRequests:   imp.recordRequests,
 		Middleware:       imp.middleware,
+		DefaultResponse:  imp.defaultResponse,
+		AllowCORS:        imp.allowCORS,
+		Key:              imp.key,
+		Cert:             imp.cert,
+		MutualAuth:       imp.mutualAuth,
+		Mode:             imp.mode,
+		Host:             imp.host,
 	}
 
 	// Include stubs if requested

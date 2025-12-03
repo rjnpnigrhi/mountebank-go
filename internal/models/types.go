@@ -253,6 +253,7 @@ type ImposterConfig struct {
 	DefaultResponse   *Response              `json:"defaultResponse,omitempty"`
 	AllowCORS         bool                   `json:"allowCORS,omitempty"`
 	Middleware        string                 `json:"middleware,omitempty"`
+	Requests          []*Request             `json:"requests,omitempty"`
 	
 	// HTTP-specific
 	Key               string                 `json:"key,omitempty"`

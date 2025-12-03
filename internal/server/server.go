@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -30,6 +31,17 @@ type Config struct {
 	AllowInjection bool
 	IPWhitelist   []string
 	APIKey        string
+	LogFile        string
+	NoLogFile      bool
+	Datadir        string
+	Origin         []string
+	Debug          bool
+	LocalOnly      bool
+	ProtoFile      string
+	Formatter      string
+	NoParse        bool
+	LogConfig      string
+	ImpostersRepo  string
 }
 
 // Server represents the mountebank server
@@ -45,9 +57,26 @@ var startTime = time.Now()
 
 // New creates a new mountebank server
 func New(config *Config) (*Server, error) {
-	logger := util.NewLogger(config.LogLevel)
+	logger := util.NewLogger(config.LogLevel, config.LogFile, config.NoLogFile)
 
-	repository := models.NewImposterRepository(logger)
+	// Initialize data store
+	var dataStore models.DataStore
+	var err error
+
+	if config.ImpostersRepo != "" {
+		dataStore, err = models.NewGojaDataStore(config.ImpostersRepo, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize custom repository: %v", err)
+		}
+		logger.Infof("Using custom imposters repository: %s", config.ImpostersRepo)
+	} else if config.Datadir != "" {
+		dataStore = models.NewFileSystemDataStore(config.Datadir, logger)
+		logger.Infof("Using filesystem data store: %s", config.Datadir)
+	} else {
+		dataStore = &models.NoOpDataStore{}
+	}
+
+	repository := models.NewImposterRepository(logger, dataStore)
 
 	// Initialize renderer
 	viewsFS, err := fs.Sub(web.GetAssets(), "views")
@@ -78,6 +107,18 @@ func New(config *Config) (*Server, error) {
 		WriteTimeout: 30 * time.Second,
 	}
 
+	// Load imposters from data store
+	configs, err := dataStore.Load()
+	if err != nil {
+		s.logger.Errorf("Failed to load imposters from data store: %v", err)
+	} else {
+		for _, cfg := range configs {
+			if err := s.CreateImposter(cfg); err != nil {
+				s.logger.Errorf("Failed to create imposter from config on port %d: %v", cfg.Port, err)
+			}
+		}
+	}
+
 	return s, nil
 }
 
@@ -86,7 +127,7 @@ func (s *Server) createRouter() http.Handler {
 	router := mux.NewRouter()
 
 	// Create controllers
-	impostersController := controllers.NewImpostersController(s.repository, s.renderer, s.logger, s.config.AllowInjection)
+	impostersController := controllers.NewImpostersController(s.repository, s.renderer, s.logger, s.config.AllowInjection, s.config.Debug)
 	imposterController := controllers.NewImposterController(s.repository, s.logger, s.renderer)
 	logsController := controllers.NewLogsController(s.logger, s.renderer)
 
@@ -101,6 +142,8 @@ func (s *Server) createRouter() http.Handler {
 	
 	// Add middleware
 	router.Use(s.loggingMiddleware)
+	router.Use(s.ipWhitelistMiddleware)
+	router.Use(s.apiKeyMiddleware)
 
 	router.HandleFunc("/imposters", impostersController.Post).Methods("POST")
 	router.HandleFunc("/imposters", impostersController.Delete).Methods("DELETE")
@@ -128,8 +171,12 @@ func (s *Server) createRouter() http.Handler {
 	router.Handle("/favicon.ico", fileServer)
 
 	// Add CORS middleware
+	allowedOrigins := s.config.Origin
+	if len(allowedOrigins) == 0 {
+		allowedOrigins = []string{"*"}
+	}
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
+		AllowedOrigins: allowedOrigins,
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"*"},
 	})
@@ -338,6 +385,58 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// ipWhitelistMiddleware checks if the request IP is whitelisted
+func (s *Server) ipWhitelistMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if whitelist contains *
+		for _, ip := range s.config.IPWhitelist {
+			if ip == "*" {
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		// Get IP from RemoteAddr
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			// Fallback if no port
+			host = r.RemoteAddr
+		}
+
+		// Check if IP is in whitelist
+		allowed := false
+		for _, ip := range s.config.IPWhitelist {
+			if ip == host {
+				allowed = true
+				break
+			}
+		}
+
+		if !allowed {
+			s.logger.Warnf("Blocked request from non-whitelisted IP: %s", host)
+			http.Error(w, "You are not authorized to access this resource", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// apiKeyMiddleware checks for the correct API key
+func (s *Server) apiKeyMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.config.APIKey != "" {
+			key := r.Header.Get("x-api-key")
+			if key != s.config.APIKey {
+				s.logger.Warn("Blocked request with invalid or missing API key")
+				http.Error(w, "Invalid API key", http.StatusUnauthorized)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Start starts the server
 func (s *Server) Start() error {
 	s.logger.Infof("mountebank-go now taking orders - point your browser to http://%s:%d/ for help", s.config.Host, s.config.Port)
@@ -381,12 +480,17 @@ func (s *Server) CreateImposter(config *models.ImposterConfig) error {
 	var imposter *models.Imposter
 	var err error
 
+	// Define save function
+	saveFunc := func(imp *models.Imposter) error {
+		return s.repository.Save(imp)
+	}
+
 	switch config.Protocol {
 	case "http":
-		imposter, err = s.createHTTPImposter(config, logger)
+		imposter, err = s.createHTTPImposter(config, logger, saveFunc)
 	case "https":
 		s.logger.Warn("HTTPS protocol not yet implemented")
-		imposter, err = s.createHTTPImposter(config, logger)
+		imposter, err = s.createHTTPImposter(config, logger, saveFunc)
 	case "tcp":
 		return util.NewProtocolError("TCP protocol not yet implemented", config.Protocol, nil)
 	case "smtp":
@@ -403,7 +507,7 @@ func (s *Server) CreateImposter(config *models.ImposterConfig) error {
 }
 
 // createHTTPImposter creates an HTTP imposter
-func (s *Server) createHTTPImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
+func (s *Server) createHTTPImposter(config *models.ImposterConfig, logger *util.Logger, saveFunc func(*models.Imposter) error) (*models.Imposter, error) {
 	// Create a temporary imposter to get the response function
 	var imposter *models.Imposter
 
@@ -417,7 +521,7 @@ func (s *Server) createHTTPImposter(config *models.ImposterConfig, logger *util.
 	}
 
 	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, s.config.AllowInjection, server.Close)
+	imposter = models.NewImposter(config, logger, s.config.AllowInjection, server.Close, saveFunc)
 	
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
