@@ -137,9 +137,6 @@ func runStart(cmd *cobra.Command, args []string) {
 	if protoFile != "protocols.json" {
 		fmt.Println("Warning: --protofile is not yet implemented")
 	}
-	if rcFile != "" {
-		fmt.Println("Warning: --rcfile is not yet implemented")
-	}
 	if formatter != "" {
 		fmt.Println("Warning: --formatter is not yet implemented")
 	}
@@ -148,6 +145,37 @@ func runStart(cmd *cobra.Command, args []string) {
 	}
 	if logConfig != "" {
 		fmt.Println("Warning: --log is not yet implemented")
+	}
+
+	// Load rcfile
+	rcPath := rcFile
+	if rcPath == "" {
+		// Check for .mbrc in current directory
+		if _, err := os.Stat(".mbrc"); err == nil {
+			rcPath = ".mbrc"
+		}
+	}
+
+	if rcPath != "" {
+		options, err := config.ParseRCFile(rcPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing rcfile %s: %v\n", rcPath, err)
+		} else {
+			for k, v := range options {
+				// Check if flag exists
+				f := cmd.Flags().Lookup(k)
+				if f != nil {
+					// Check if changed by user
+					if !cmd.Flags().Changed(k) {
+						if err := f.Value.Set(v); err != nil {
+							fmt.Fprintf(os.Stderr, "Error setting flag %s from rcfile: %v\n", k, err)
+						}
+					}
+				} else {
+					fmt.Printf("Warning: Unknown option in rcfile: %s\n", k)
+				}
+			}
+		}
 	}
 
 	var whitelist []string
