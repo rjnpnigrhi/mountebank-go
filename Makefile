@@ -23,7 +23,7 @@ clean:
 
 # Run the server
 run: build
-	./mb start
+	./mb start --allowInjection
 
 # Install dependencies
 deps:
@@ -67,8 +67,8 @@ docker-stop:
 docker-logs:
 	docker logs -f mountebank
 
-docker-compose-up:
-	docker-compose up -d
+docker-compose-up: docker-compose-down
+	docker-compose up -d --build
 
 docker-compose-down:
 	docker-compose down

@@ -3,7 +3,7 @@ set -e
 
 # Default variables
 IMAGE_NAME="rjnpnigrhi/mountebank-go"
-DATE_TAG=$(date +%Y%m%d)
+DATE_TAG=$(date +%Y%m%d_%H%M%S)
 
 # Check for docker buildx
 if ! docker buildx version > /dev/null 2>&1; then

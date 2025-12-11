@@ -34,3 +34,4 @@ go.work.sum
 /mb
 mb.pid
 mb.log
+mountebank-templates

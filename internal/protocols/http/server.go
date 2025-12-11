@@ -15,13 +15,13 @@ import (
 
 // Server represents an HTTP imposter server
 type Server struct {
-	port       int
-	server     *http.Server
-	listener   net.Listener
-	logger     *util.Logger
-	stubs      *models.StubRepository
+	port        int
+	server      *http.Server
+	listener    net.Listener
+	logger      *util.Logger
+	stubs       *models.StubRepository
 	getResponse func(*models.Request, map[string]interface{}) (*models.Response, error)
-	allowCORS  bool
+	allowCORS   bool
 }
 
 // Create creates a new HTTP server
@@ -168,11 +168,31 @@ func (s *Server) httpToRequest(r *http.Request) (*models.Request, error) {
 		}
 	}
 
-	// Try to parse body as JSON
+	// Parse body based on Content-Type
 	var body interface{}
+	isJSON := false
+	if contentType, ok := headers["Content-Type"]; ok {
+		if ctStr, ok := contentType.(string); ok {
+			if strings.Contains(strings.ToLower(ctStr), "json") {
+				isJSON = true
+			}
+		} else if ctSlice, ok := contentType.([]string); ok { // Should not happen with current logic but for safety
+			for _, v := range ctSlice {
+				if strings.Contains(strings.ToLower(v), "json") {
+					isJSON = true
+					break
+				}
+			}
+		}
+	}
+
 	if len(bodyBytes) > 0 {
-		if err := json.Unmarshal(bodyBytes, &body); err != nil {
-			// If not JSON, use as string
+		if isJSON {
+			if err := json.Unmarshal(bodyBytes, &body); err != nil {
+				// If JSON parsing fails, fall back to string
+				body = string(bodyBytes)
+			}
+		} else {
 			body = string(bodyBytes)
 		}
 	}
