@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mountebank:
     build:
@@ -9,16 +7,16 @@ services:
     container_name: mountebank-go
     ports:
       - "2525:2525"
-      # Add additional ports for imposters as needed
-      - "4000-4010:4000-4010"
-    command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /app/impostersejs/imposters.ejs --allowInjection --datadir /app/data
+      - "4012:4012"
+    # command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /app/impostersejs/imposters.ejs --allowInjection --datadir /app/data
+    command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /mountebank-templates/imposters.ejs --allowInjection
     environment:
       - MB_PORT=2525 # Kept for reference, though not used by app directly
       - MB_LOG_LEVEL=info
     volumes:
-      - ./impostersejs/test:/app/impostersejs
+      - ./mountebank-templates:/mountebank-templates
       # Optional: Mount for persistent data
-      - ./data:/app/data
+      # - ./data:/app/data
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:2525/" ]
