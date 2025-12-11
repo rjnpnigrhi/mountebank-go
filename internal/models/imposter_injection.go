@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -56,6 +57,74 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 	consoleObj.Set("info", logFn)
 	consoleObj.Set("warn", warnFn)
 	consoleObj.Set("error", errorFn)
+	// Polyfill Buffer
+	bufferObj := vm.NewObject()
+
+	// Buffer.from(string, encoding)
+	bufferObj.Set("from", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) == 0 {
+			return goja.Null()
+		}
+
+		input := call.Arguments[0].String()
+		encoding := "utf8"
+		if len(call.Arguments) > 1 {
+			encoding = call.Arguments[1].String()
+		}
+
+		var data []byte
+		if encoding == "base64" {
+			// Ignore error for now, similar to how Node might handle invalid input leniently or throw
+			// But for injection, panic might catch it.
+			d, _ := base64.StdEncoding.DecodeString(input)
+			data = d
+		} else {
+			data = []byte(input)
+		}
+
+		// Create a buffer instance object
+		bufInstance := vm.NewObject()
+		bufInstance.Set("toString", func(call goja.FunctionCall) goja.Value {
+			outEncoding := "utf8"
+			if len(call.Arguments) > 0 {
+				outEncoding = call.Arguments[0].String()
+			}
+
+			if outEncoding == "base64" {
+				return vm.ToValue(base64.StdEncoding.EncodeToString(data))
+			}
+			return vm.ToValue(string(data))
+		})
+
+		return bufInstance
+	})
+
+	// Buffer.alloc(size)
+	bufferObj.Set("alloc", func(call goja.FunctionCall) goja.Value {
+		size := 0
+		if len(call.Arguments) > 0 {
+			size = int(call.Arguments[0].ToInteger())
+		}
+		data := make([]byte, size)
+
+		bufInstance := vm.NewObject()
+		bufInstance.Set("toString", func(call goja.FunctionCall) goja.Value {
+			outEncoding := "utf8"
+			if len(call.Arguments) > 0 {
+				outEncoding = call.Arguments[0].String()
+			}
+
+			if outEncoding == "base64" {
+				return vm.ToValue(base64.StdEncoding.EncodeToString(data))
+			}
+			return vm.ToValue(string(data))
+		})
+
+		return bufInstance
+	})
+
+	vm.Set("Buffer", bufferObj)
+
 	vm.Set("console", consoleObj)
 
 	// Wrap in a function call
