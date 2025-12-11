@@ -56,11 +56,7 @@ func NewRenderer(views fs.FS) (*Renderer, error) {
 		return nil, err
 	}
 
-	// Debug: Print defined templates
-	fmt.Println("Defined templates:")
-	for _, t := range tmpl.Templates() {
-		fmt.Println("- " + t.Name())
-	}
+
 
 	return &Renderer{
 		templates: tmpl,

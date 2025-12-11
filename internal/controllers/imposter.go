@@ -4,23 +4,27 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mountebank-testing/mountebank-go/internal/models"
 	"github.com/mountebank-testing/mountebank-go/internal/util"
+	"github.com/mountebank-testing/mountebank-go/internal/web"
 )
 
 // ImposterController handles single imposter endpoints
 type ImposterController struct {
 	repository *models.ImposterRepository
 	logger     *util.Logger
+	renderer   *web.Renderer
 }
 
 // NewImposterController creates a new imposter controller
-func NewImposterController(repository *models.ImposterRepository, logger *util.Logger) *ImposterController {
+func NewImposterController(repository *models.ImposterRepository, logger *util.Logger, renderer *web.Renderer) *ImposterController {
 	return &ImposterController{
 		repository: repository,
 		logger:     logger,
+		renderer:   renderer,
 	}
 }
 
@@ -46,6 +50,24 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 		"replayable":    replayable,
 		"requests":      true,
 		"removeProxies": removeProxies,
+		"stubs":         true,
+	}
+
+	// Check if client accepts HTML (browser)
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		info := imposter.ToJSON(options)
+		
+		// Convert struct to map for template access
+		var imposterMap map[string]interface{}
+		data, _ := json.Marshal(info)
+		json.Unmarshal(data, &imposterMap)
+		
+		err := ic.renderer.Render(w, "imposter", imposterMap)
+		if err != nil {
+			ic.logger.Errorf("Failed to render imposter: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -74,6 +96,7 @@ func (ic *ImposterController) Delete(w http.ResponseWriter, r *http.Request) {
 		"replayable":    replayable,
 		"requests":      true,
 		"removeProxies": removeProxies,
+		"stubs":         false, // Don't include stubs in delete response
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -111,8 +134,8 @@ func (ic *ImposterController) PutStubs(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -130,11 +153,14 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var stub models.Stub
-	if err := json.NewDecoder(r.Body).Decode(&stub); err != nil {
+	var request struct {
+		Stub models.Stub `json:"stub"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	stub := request.Stub
 
 	// Get index from query parameter
 	indexStr := r.URL.Query().Get("index")
@@ -158,8 +184,8 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -191,8 +217,47 @@ func (ic *ImposterController) DeleteStub(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
+	}))
+}
+
+// PutStub handles PUT /imposters/:id/stubs/:stubIndex
+func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
+	port, err := ic.getPortFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	imposter, err := ic.repository.Get(port)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	vars := mux.Vars(r)
+	stubIndex, err := strconv.Atoi(vars["stubIndex"])
+	if err != nil {
+		http.Error(w, "invalid stub index", http.StatusBadRequest)
+		return
+	}
+
+	var stub models.Stub
+	if err := json.NewDecoder(r.Body).Decode(&stub); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := imposter.Stubs().ReplaceAtIndex(stub, stubIndex); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 
@@ -217,8 +282,34 @@ func (ic *ImposterController) ResetRequests(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": false,
+		"stubs":    false,
+	}))
+}
+
+// DeleteSavedProxyResponses handles DELETE /imposters/:id/savedProxyResponses
+func (ic *ImposterController) DeleteSavedProxyResponses(w http.ResponseWriter, r *http.Request) {
+	port, err := ic.getPortFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	imposter, err := ic.repository.Get(port)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err := imposter.DeleteSavedProxyResponses(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
+		"requests": false,
+		"stubs":    false,
 	}))
 }
 

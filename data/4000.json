@@ -1,0 +1,39 @@
+{
+  "port": 4000,
+  "protocol": "http",
+  "name": "test-imposter-1",
+  "numberOfRequests": 0,
+  "recordRequests": true,
+  "stubs": [
+    {
+      "predicates": [
+        {
+          "startsWith": {
+            "path": "/test"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "is": {
+            "statusCode": 200,
+            "body": "Hello World"
+          }
+        }
+      ],
+      "_links": {
+        "self": {
+          "href": "http://localhost:2525/imposters/4000/stubs/0"
+        }
+      }
+    }
+  ],
+  "_links": {
+    "self": {
+      "href": "http://localhost:2525/imposters/4000"
+    },
+    "stubs": {
+      "href": "http://localhost:2525/imposters/4000/stubs"
+    }
+  }
+}

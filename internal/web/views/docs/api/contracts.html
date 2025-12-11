@@ -1,11 +1,9 @@
-
-
 {{ template "_header.html" . }}
 
 <h1>Contracts</h1>
 
-<p>To get more details on any field, simply hover your mouse over that field.  Purple fields
-are only meaningful in the response; they will be ignored in any requests.</p>
+<p>To get more details on any field, simply hover your mouse over that field. Purple fields
+  are only meaningful in the response; they will be ignored in any requests.</p>
 
 <p>Showing contract for the
   <select id='contract-types'>
@@ -17,44 +15,53 @@ are only meaningful in the response; they will be ignored in any requests.</p>
     <option value='stubs'>stubs</option>
     <option value='config'>config</option>
     <option value='logs'>logs</option>
-  </select> resource.</p>
+  </select> resource.
+</p>
 
 <div class='contract' id='specification'>
-  
-  
-  
-  
-  
-  
-  
-  
+  <div id='home-specification' style='display:none'>{{ template "docs/api/contracts/home" . }}</div>
+  <div id='imposters-specification' style='display:none'>{{ template "docs/api/contracts/imposters" . }}</div>
+  <div id='imposter-specification' style='display:none'>{{ template "docs/api/contracts/imposter" . }}</div>
+  <div id='addStub-specification' style='display:none'>{{ template "docs/api/contracts/addStub" . }}</div>
+  <div id='stub-specification' style='display:none'>{{ template "docs/api/contracts/stub" . }}</div>
+  <div id='stubs-specification' style='display:none'>{{ template "docs/api/contracts/stubs" . }}</div>
+  <div id='config-specification' style='display:none'>{{ template "docs/api/contracts/config" . }}</div>
+  <div id='logs-specification' style='display:none'>{{ template "docs/api/contracts/logs" . }}</div>
 </div>
 
 <div class='contract' id='specification-description'>
-  
-  
-  
-  
-  
-  
-  
-  
+  <div id='home-specification-description' style='display:none'>{{ template "docs/api/contracts/home-description" . }}
+  </div>
+  <div id='imposters-specification-description' style='display:none'>{{ template
+    "docs/api/contracts/imposters-description" . }}</div>
+  <div id='imposter-specification-description' style='display:none'>{{ template
+    "docs/api/contracts/imposter-description" . }}</div>
+  <div id='addStub-specification-description' style='display:none'>{{ template "docs/api/contracts/addStub-description"
+    . }}</div>
+  <div id='stub-specification-description' style='display:none'>{{ template "docs/api/contracts/stub-description" . }}
+  </div>
+  <div id='stubs-specification-description' style='display:none'>{{ template "docs/api/contracts/stubs-description" . }}
+  </div>
+  <div id='config-specification-description' style='display:none'>{{ template "docs/api/contracts/config-description" .
+    }}</div>
+  <div id='logs-specification-description' style='display:none'>{{ template "docs/api/contracts/logs-description" . }}
+  </div>
 </div>
 
 
 <script type='text/javascript'>
   $(document).ready(function () {
-    function descriptionFor (id) {
+    function descriptionFor(id) {
       return $('#' + id + '-description');
     }
 
-    function movedRight (fromElement, x, y) {
+    function movedRight(fromElement, x, y) {
       return x > fromElement.offset().left &&
-             y > fromElement.offset().top &&
-             y < fromElement.offset().top + fromElement.height();
+        y > fromElement.offset().top &&
+        y < fromElement.offset().top + fromElement.height();
     }
 
-    function hoverOn () {
+    function hoverOn() {
       $('#specification span').on('mouseenter', function () {
         $('#specification span').css('background-color', '');
         $('#specification-description div').hide();
@@ -77,7 +84,7 @@ are only meaningful in the response; they will be ignored in any requests.</p>
       });
     }
 
-    function hoverOff () {
+    function hoverOff() {
       $('#specification span').off('mouseenter');
       $('#specification span').off('mouseleave');
     }
@@ -95,11 +102,11 @@ are only meaningful in the response; they will be ignored in any requests.</p>
       }
     });
 
-    function contractType () {
+    function contractType() {
       var query = location.search.substring(1).split('&');
       for (let i = 0; i < query.length; i++) {
         var key = query[i].split('=')[0],
-            value = query[i].split('=')[1];
+          value = query[i].split('=')[1];
         if (key === 'type') {
           return value;
         }

@@ -1,15 +1,17 @@
-
-
 {{ template "_header.html" . }}
 
 <h1>Fault Simulation</h1>
 
-<p>Fault simulation allows us to check how our application behaves when downstream dependencies don't respond as expected due to network failures.
-    Mountebank already has the ability to specify delays via "wait" but we may also want to test when the connection is abruptly reset or garbage data is returned, similar to some of Wiremock's <a href='http://wiremock.org/docs/simulating-faults/'>fault simulation functionality</a>
+<p>Fault simulation allows us to check how our application behaves when downstream dependencies don't respond as
+    expected due to network failures.
+    Mountebank already has the ability to specify delays via "wait" but we may also want to test when the connection is
+    abruptly reset or garbage data is returned, similar to some of Wiremock's <a
+        href='http://wiremock.org/docs/simulating-faults/'>fault simulation functionality</a>
 </p>
 
 <p>Fault simulation has only been implemented for http, https and tcp protocols.
-The "fault" response type is mutually exclusive with respect to the other response types as it necessarily prevents any normal response being returned to the client.</p>
+    The "fault" response type is mutually exclusive with respect to the other response types as it necessarily prevents
+    any normal response being returned to the client.</p>
 
 <p>The <code>fault</code> response type takes a single parameter specifying which fault to simulate.</p>
 
@@ -32,21 +34,20 @@ The "fault" response type is mutually exclusive with respect to the other respon
 
 <section class='accordion'>
     <div>
-        <a class='section-toggler'
-           id='connection-reset' name='connection-reset' href='#connection-reset'>
+        <a class='section-toggler' id='connection-reset' name='connection-reset' href='#connection-reset'>
             Connection Reset by Peer
         </a>
         <section>
-            {{ template "connectionReset.html" . }}
+            {{ template "docs/api/fault/connectionReset" . }}
         </section>
     </div>
     <div>
-        <a class='section-toggler'
-           id='random-data-then-close' name='random-data-then-close' href='#random-data-then-close'>
+        <a class='section-toggler' id='random-data-then-close' name='random-data-then-close'
+            href='#random-data-then-close'>
             Random Data then Close
         </a>
         <section>
-            {{ template "randomDataThenClose.html" . }}
+            {{ template "docs/api/fault/randomDataThenClose" . }}
         </section>
     </div>
 </section>

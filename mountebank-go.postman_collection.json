@@ -249,6 +249,37 @@
                     "response": []
                 },
                 {
+                    "name": "Update Stub",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"responses\": [\n    {\n      \"is\": {\n        \"statusCode\": 200,\n        \"body\": \"Updated stub\"\n      }\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/stubs/0",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs",
+                                "0"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
                     "name": "Delete Stub",
                     "request": {
                         "method": "DELETE",
@@ -265,6 +296,27 @@
                                 "4545",
                                 "stubs",
                                 "0"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Saved Proxy Responses",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/imposters/4545/savedProxyResponses",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "savedProxyResponses"
                             ]
                         }
                     },
@@ -345,6 +397,35 @@
                                     "key": "endIndex",
                                     "value": "10",
                                     "disabled": true
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Logs (Paginated)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:2525/logs?startIndex=0&endIndex=5",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "2525",
+                            "path": [
+                                "logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startIndex",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "endIndex",
+                                    "value": "5"
                                 }
                             ]
                         }

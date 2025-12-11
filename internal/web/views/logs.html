@@ -1,5 +1,3 @@
-
-
 {{ template "_header.html" . }}
 
 <h1>Logs</h1>
@@ -8,31 +6,29 @@
 
 <pre id='logs'><code>
 {{ range $logEntry := .logs }}
-
+{{ prettyPrint $logEntry }}
 {{ end }}
 </code></pre>
 
 <script type='text/javascript'>
   $(document).ready(function () {
-    var nextIndex = {{ .logs.length }},
+    var nextIndex = {{ .logsLength }},
         intervalId,
         topOfTail = $('#tail').position().top,
         tailset = 5;
 
     $(document).on('scroll', window, animateTail);
 
-    
-
-    function findTop () {
+    function findTop() {
       return $(window).scrollTop() >= topOfTail ? $(window).scrollTop() - topOfTail + tailset : 0;
     }
 
-    function scrollToBottom () {
+    function scrollToBottom() {
       $('html, body').animate({ scrollTop: $(document).height() }, 200);
       $('#tail').css('top', findTop());
     }
 
-    function getLatestLogEntries () {
+    function getLatestLogEntries() {
       $.getJSON('/logs?startIndex=' + nextIndex, json => {
         var logs = json.logs;
         for (let i = 0; i < logs.length; i++) {

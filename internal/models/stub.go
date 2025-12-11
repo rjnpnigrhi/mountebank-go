@@ -12,14 +12,19 @@ type StubRepository struct {
 	requests []*Request
 	mu       sync.RWMutex
 	logger   *util.Logger
+	onUpdate func()
 }
 
 // NewStubRepository creates a new stub repository
-func NewStubRepository(stubs []Stub, logger *util.Logger) *StubRepository {
+func NewStubRepository(stubs []Stub, requests []*Request, logger *util.Logger, onUpdate func()) *StubRepository {
+	if requests == nil {
+		requests = make([]*Request, 0)
+	}
 	return &StubRepository{
 		stubs:    stubs,
-		requests: make([]*Request, 0),
+		requests: requests,
 		logger:   logger,
+		onUpdate: onUpdate,
 	}
 }
 
@@ -52,6 +57,9 @@ func (sr *StubRepository) Add(stub Stub) error {
 	defer sr.mu.Unlock()
 	
 	sr.stubs = append(sr.stubs, stub)
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
 	return nil
 }
 
@@ -62,11 +70,17 @@ func (sr *StubRepository) InsertAtIndex(stub Stub, index int) error {
 	
 	if index < 0 || index > len(sr.stubs) {
 		sr.stubs = append(sr.stubs, stub)
+		if sr.onUpdate != nil {
+			sr.onUpdate()
+		}
 		return nil
 	}
 	
 	// Insert at index
 	sr.stubs = append(sr.stubs[:index], append([]Stub{stub}, sr.stubs[index:]...)...)
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
 	return nil
 }
 
@@ -80,6 +94,9 @@ func (sr *StubRepository) DeleteAtIndex(index int) error {
 	}
 	
 	sr.stubs = append(sr.stubs[:index], sr.stubs[index+1:]...)
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
 	return nil
 }
 
@@ -93,6 +110,9 @@ func (sr *StubRepository) ReplaceAtIndex(stub Stub, index int) error {
 	}
 	
 	sr.stubs[index] = stub
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
 	return nil
 }
 
@@ -102,6 +122,9 @@ func (sr *StubRepository) ReplaceAll(stubs []Stub) error {
 	defer sr.mu.Unlock()
 	
 	sr.stubs = stubs
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
 	return nil
 }
 
@@ -119,6 +142,9 @@ func (sr *StubRepository) AddRequest(request *Request) error {
 	defer sr.mu.Unlock()
 	
 	sr.requests = append(sr.requests, request)
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
 	return nil
 }
 
@@ -136,6 +162,19 @@ func (sr *StubRepository) DeleteSavedRequests() error {
 	defer sr.mu.Unlock()
 	
 	sr.requests = make([]*Request, 0)
+	if sr.onUpdate != nil {
+		sr.onUpdate()
+	}
+	return nil
+}
+
+// DeleteSavedProxyResponses removes all stubs recorded by a proxy
+func (sr *StubRepository) DeleteSavedProxyResponses() error {
+	sr.mu.Lock()
+	defer sr.mu.Unlock()
+	
+	// TODO: Implement proxy stub tracking and removal
+	// For now, since we don't have proxy implemented, there are no proxy stubs to remove
 	return nil
 }
 

@@ -2,8 +2,11 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -12,10 +15,76 @@ import (
 type Logger struct {
 	*logrus.Logger
 	scope string
+	hook  *LogHook
+}
+
+// ... (NewLogger remains mostly same, just need to ensure imports are correct)
+
+// LogEntry represents a log entry
+type LogEntry struct {
+	Level     string `json:"level"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+// LogHook captures logs in memory
+type LogHook struct {
+	Entries []LogEntry
+	mu      sync.RWMutex
+}
+
+// Levels returns the supported log levels
+func (h *LogHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+// Fire is called when a log entry is created
+func (h *LogHook) Fire(entry *logrus.Entry) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.Entries = append(h.Entries, LogEntry{
+		Level:     entry.Level.String(),
+		Message:   entry.Message,
+		Timestamp: entry.Time.Format(time.RFC3339),
+	})
+	return nil
+}
+
+// GetEntries returns the captured log entries
+func (l *Logger) GetEntries(startIndex, endIndex int) []LogEntry {
+	if l.hook == nil {
+		return []LogEntry{}
+	}
+
+	l.hook.mu.RLock()
+	defer l.hook.mu.RUnlock()
+
+	entries := l.hook.Entries
+	total := len(entries)
+
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if startIndex > total {
+		startIndex = total
+	}
+
+	if endIndex < 0 || endIndex > total {
+		endIndex = total
+	}
+
+	if startIndex > endIndex {
+		return []LogEntry{}
+	}
+
+	// Return a copy to avoid race conditions after returning
+	result := make([]LogEntry, endIndex-startIndex)
+	copy(result, entries[startIndex:endIndex])
+	return result
 }
 
 // NewLogger creates a new logger instance
-func NewLogger(level string) *Logger {
+func NewLogger(level string, logFile string, noLogFile bool) *Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
@@ -35,11 +104,27 @@ func NewLogger(level string) *Logger {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	logger.SetOutput(os.Stdout)
+	if !noLogFile && logFile != "" {
+		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err == nil {
+			logger.SetOutput(io.MultiWriter(os.Stdout, file))
+		} else {
+			fmt.Printf("Failed to open log file %s: %v\n", logFile, err)
+			logger.SetOutput(os.Stdout)
+		}
+	} else {
+		logger.SetOutput(os.Stdout)
+	}
+
+	hook := &LogHook{
+		Entries: make([]LogEntry, 0),
+	}
+	logger.AddHook(hook)
 
 	return &Logger{
 		Logger: logger,
 		scope:  "",
+		hook:   hook,
 	}
 }
 
@@ -48,6 +133,7 @@ func (l *Logger) WithScope(scope string) *Logger {
 	return &Logger{
 		Logger: l.Logger,
 		scope:  scope,
+		hook:   l.hook,
 	}
 }
 
@@ -108,3 +194,5 @@ func (l *Logger) Error(args ...interface{}) {
 func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.Logger.Error(l.formatMessage(fmt.Sprintf(format, args...)))
 }
+
+

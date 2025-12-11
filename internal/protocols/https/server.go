@@ -45,7 +45,7 @@ func Create(config *models.ImposterConfig, logger *util.Logger, getResponse func
 		listener.Close()
 	}
 
-	stubs := models.NewStubRepository(config.Stubs, logger)
+	stubs := models.NewStubRepository(config.Stubs, config.Requests, logger, nil)
 
 	s := &Server{
 		port:        port,
@@ -120,6 +120,16 @@ func Create(config *models.ImposterConfig, logger *util.Logger, getResponse func
 
 // handleRequest handles incoming HTTPS requests
 func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		msg := fmt.Sprintf("[IMPOSTER:%d] %s %s took %v", s.port, r.Method, r.URL.String(), duration)
+		if duration > 100*time.Millisecond {
+			msg += " (SLOW)"
+		}
+		s.logger.Info(msg)
+	}()
+
 	// Handle CORS
 	if s.allowCORS {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

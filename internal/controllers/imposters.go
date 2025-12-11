@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"sort"
 
 	"strings"
 
@@ -15,62 +18,150 @@ import (
 
 // ImpostersController handles imposter collection endpoints
 type ImpostersController struct {
-	repository *models.ImposterRepository
-	renderer   *web.Renderer
-	logger     *util.Logger
+	repository     *models.ImposterRepository
+	renderer       *web.Renderer
+	logger         *util.Logger
+	allowInjection bool
+	debug          bool
 }
 
 // NewImpostersController creates a new imposters controller
-func NewImpostersController(repository *models.ImposterRepository, renderer *web.Renderer, logger *util.Logger) *ImpostersController {
+func NewImpostersController(repository *models.ImposterRepository, renderer *web.Renderer, logger *util.Logger, allowInjection bool, debug bool) *ImpostersController {
 	return &ImpostersController{
-		repository: repository,
-		renderer:   renderer,
-		logger:     logger,
+		repository:     repository,
+		renderer:       renderer,
+		logger:         logger,
+		allowInjection: allowInjection,
+		debug:          debug,
 	}
+}
+
+// ... (Get, Post, Delete, Put, createImposter remain same)
+
+// createHTTPImposter creates an HTTP imposter
+func (ic *ImpostersController) createHTTPImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
+	// Create a temporary imposter to get the response function
+	var imposter *models.Imposter
+
+	// Create HTTP server
+	server, err := httpproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
+		return imposter.GetResponseFor(request, details)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Define save function
+	saveFunc := func(imp *models.Imposter) error {
+		return ic.repository.Save(imp)
+	}
+
+	// Create imposter with the server's close function
+	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close, saveFunc)
+	
+	// Update port if it was auto-assigned
+	if config.Port == 0 {
+		config.Port = server.Port()
+	}
+
+	return imposter, nil
+}
+
+// createHTTPSImposter creates an HTTPS imposter
+func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
+	// Create a temporary imposter to get the response function
+	var imposter *models.Imposter
+
+	// Create HTTPS server
+	server, err := httpsproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
+		return imposter.GetResponseFor(request, details)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Define save function
+	saveFunc := func(imp *models.Imposter) error {
+		return ic.repository.Save(imp)
+	}
+
+	// Create imposter with the server's close function
+	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close, saveFunc)
+	
+	// Update port if it was auto-assigned
+	if config.Port == 0 {
+		config.Port = server.Port()
+	}
+
+	return imposter, nil
 }
 
 // Get handles GET /imposters
 func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 	imposters := ic.repository.GetAll()
 
-	// Parse query parameters
-	replayable := r.URL.Query().Get("replayable") == "true"
-	removeProxies := r.URL.Query().Get("removeProxies") == "true"
+	// Sort imposters by port
+	sort.Slice(imposters, func(i, j int) bool {
+		return imposters[i].Port() < imposters[j].Port()
+	})
 
-	// Check if client accepts HTML (browser)
-	if strings.Contains(r.Header.Get("Accept"), "text/html") {
-		// Convert to simple JSON for template
-		imposterList := make([]interface{}, 0, len(imposters))
-		for _, imposter := range imposters {
-			imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-				"replayable":    replayable,
-				"removeProxies": removeProxies,
-				"requests":      false,
-			}))
-		}
 
-		err := ic.renderer.Render(w, "imposters", map[string]interface{}{
-			"imposters": imposterList,
-		})
-		if err != nil {
-			ic.logger.Errorf("Failed to render imposters: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-		return
-	}
+	    // Parse query parameters
+    replayable := r.URL.Query().Get("replayable") == "true"
+    removeProxies := r.URL.Query().Get("removeProxies") == "true"
+    
+    // By default, list endpoint does not include stubs unless replayable is true
+    includeStubs := replayable
 
-	// Convert to JSON format
-	result := make(map[string]interface{})
-	result["imposters"] = make([]interface{}, 0)
+    // Check if client accepts HTML (browser)
+    if strings.Contains(r.Header.Get("Accept"), "text/html") {
+        // Convert to simple JSON for template
+        imposterList := make([]map[string]interface{}, 0, len(imposters))
+        for _, imposter := range imposters {
+            info := imposter.ToJSON(map[string]interface{}{
+                "replayable":    replayable,
+                "removeProxies": removeProxies,
+                "requests":      false,
+				"stubs":         includeStubs,
+				"debug":         ic.debug,
+            })
+            
+            // Convert struct to map for template access
+            var imposterMap map[string]interface{}
+            data, _ := json.Marshal(info)
+            json.Unmarshal(data, &imposterMap)
+            imposterList = append(imposterList, imposterMap)
+        }
 
-	imposterList := make([]interface{}, 0, len(imposters))
-	for _, imposter := range imposters {
-		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"replayable":    replayable,
-			"removeProxies": removeProxies,
-			"requests":      false,
-		}))
-	}
+        ic.logger.Infof("Rendering imposters page with %d imposters", len(imposterList))
+        if len(imposterList) > 0 {
+            ic.logger.Infof("First imposter: %+v", imposterList[0])
+        }
+
+        err := ic.renderer.Render(w, "imposters", map[string]interface{}{
+            "imposters": imposterList,
+        })
+        if err != nil {
+            ic.logger.Errorf("Failed to render imposters: %v", err)
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        }
+        return
+    }
+
+    // Convert to JSON format
+    result := make(map[string]interface{})
+    result["imposters"] = make([]interface{}, 0)
+
+    imposterList := make([]interface{}, 0, len(imposters))
+    for _, imposter := range imposters {
+        imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
+            "replayable":    replayable,
+            "removeProxies": removeProxies,
+            "requests":      false,
+            "stubs":         includeStubs,
+            "debug":         ic.debug,
+        }))
+    }
 
 	result["imposters"] = imposterList
 
@@ -103,10 +194,11 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 
 	// Return imposter info
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", fmt.Sprintf("http://localhost:%d/imposters/%d", imposter.Port(), imposter.Port()))
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"replayable": true,
-		"requests":   false,
+		"requests": true,
+		"stubs":    false,
 	}))
 }
 
@@ -123,8 +215,8 @@ func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"replayable": true,
-			"requests":   true,
+			"requests": true,
+			"stubs":    false,
 		}))
 	}
 
@@ -136,12 +228,35 @@ func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 
 // Put handles PUT /imposters
 func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		Imposters []models.ImposterConfig `json:"imposters"`
+	// Read body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	var impostersConfig []models.ImposterConfig
+
+	// Trim whitespace to check first character
+	trimmedBody := strings.TrimSpace(string(body))
+	if strings.HasPrefix(trimmedBody, "{") {
+		// Wrapped object
+		var wrappedRequest struct {
+			Imposters []models.ImposterConfig `json:"imposters"`
+		}
+		if err := json.Unmarshal(body, &wrappedRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		impostersConfig = wrappedRequest.Imposters
+	} else if strings.HasPrefix(trimmedBody, "[") {
+		// Raw array
+		if err := json.Unmarshal(body, &impostersConfig); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else {
+		http.Error(w, "Invalid JSON: must be an object or an array", http.StatusBadRequest)
 		return
 	}
 
@@ -149,8 +264,8 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	ic.repository.DeleteAll()
 
 	// Create new imposters
-	imposters := make([]*models.Imposter, 0, len(request.Imposters))
-	for _, config := range request.Imposters {
+	imposters := make([]*models.Imposter, 0, len(impostersConfig))
+	for _, config := range impostersConfig {
 		imposter, err := ic.createImposter(&config)
 		if err != nil {
 			ic.logger.Errorf("Error creating imposter: %v", err)
@@ -172,8 +287,8 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"replayable": true,
-			"requests":   false,
+			"requests": false,
+			"stubs":    false,
 		}))
 	}
 
@@ -206,50 +321,4 @@ func (ic *ImpostersController) createImposter(config *models.ImposterConfig) (*m
 	}
 }
 
-// createHTTPImposter creates an HTTP imposter
-func (ic *ImpostersController) createHTTPImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
-	// Create a temporary imposter to get the response function
-	var imposter *models.Imposter
 
-	// Create HTTP server
-	server, err := httpproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
-		return imposter.GetResponseFor(request, details)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, server.Close)
-	
-	// Update port if it was auto-assigned
-	if config.Port == 0 {
-		config.Port = server.Port()
-	}
-
-	return imposter, nil
-}
-
-// createHTTPSImposter creates an HTTPS imposter
-func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig, logger *util.Logger) (*models.Imposter, error) {
-	// Create a temporary imposter to get the response function
-	var imposter *models.Imposter
-
-	// Create HTTPS server
-	server, err := httpsproto.Create(config, logger, func(request *models.Request, details map[string]interface{}) (*models.Response, error) {
-		return imposter.GetResponseFor(request, details)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Create imposter with the server's close function
-	imposter = models.NewImposter(config, logger, server.Close)
-	
-	// Update port if it was auto-assigned
-	if config.Port == 0 {
-		config.Port = server.Port()
-	}
-
-	return imposter, nil
-}

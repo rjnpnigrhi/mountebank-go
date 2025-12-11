@@ -15,17 +15,19 @@ import (
 
 // PredicateEvaluator evaluates predicates against requests
 type PredicateEvaluator struct {
-	encoding string
-	logger   *util.Logger
-	state    map[string]interface{}
+	encoding       string
+	logger         *util.Logger
+	state          map[string]interface{}
+	allowInjection bool
 }
 
 // NewPredicateEvaluator creates a new predicate evaluator
-func NewPredicateEvaluator(encoding string, logger *util.Logger, state map[string]interface{}) *PredicateEvaluator {
+func NewPredicateEvaluator(encoding string, logger *util.Logger, state map[string]interface{}, allowInjection bool) *PredicateEvaluator {
 	return &PredicateEvaluator{
-		encoding: encoding,
-		logger:   logger,
-		state:    state,
+		encoding:       encoding,
+		logger:         logger,
+		state:          state,
+		allowInjection: allowInjection,
 	}
 }
 
@@ -186,6 +188,11 @@ func (pe *PredicateEvaluator) evaluateExists(predicate Predicate, request *Reque
 func (pe *PredicateEvaluator) evaluateInject(predicate Predicate, request *Request) bool {
 	if request.IsDryRun {
 		return true
+	}
+
+	if !pe.allowInjection {
+		pe.logger.Error("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
+		return false
 	}
 
 	vm := goja.New()

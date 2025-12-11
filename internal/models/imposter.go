@@ -1,11 +1,9 @@
 package models
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 
-	"github.com/dop251/goja"
 	"github.com/mountebank-testing/mountebank-go/internal/util"
 )
 
@@ -26,6 +24,16 @@ type Imposter struct {
 	behaviorExecutor   *BehaviorExecutor
 	defaultResponse    *Response
 	middleware         string
+	allowInjection     bool
+	saveFunc           func(*Imposter) error
+	
+	// Config fields for persistence
+	allowCORS          bool
+	key                string
+	cert               string
+	mutualAuth         bool
+	mode               string
+	host               string
 }
 
 // ImposterInfo contains information about an imposter
@@ -38,12 +46,30 @@ type ImposterInfo struct {
 	Requests         []*Request             `json:"requests,omitempty"`
 	Stubs            []Stub                 `json:"stubs,omitempty"`
 	Middleware       string                 `json:"middleware,omitempty"`
+	DefaultResponse  *Response              `json:"defaultResponse,omitempty"`
+	AllowCORS        bool                   `json:"allowCORS,omitempty"`
+	Key              string                 `json:"key,omitempty"`
+	Cert             string                 `json:"cert,omitempty"`
+	MutualAuth       bool                   `json:"mutualAuth,omitempty"`
+	Mode             string                 `json:"mode,omitempty"`
+	Host             string                 `json:"host,omitempty"`
+	Links            *ImposterLinks         `json:"_links,omitempty"`
+}
+
+// ImposterLinks contains hypermedia links for an imposter
+type ImposterLinks struct {
+	Self  *Link `json:"self"`
+	Stubs *Link `json:"stubs,omitempty"`
+}
+
+// Link represents a hypermedia link
+type Link struct {
+	Href string `json:"href"`
 }
 
 // NewImposter creates a new imposter
-func NewImposter(config *ImposterConfig, logger *util.Logger, closeFunc func(func()) error) *Imposter {
+func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection bool, closeFunc func(func()) error, saveFunc func(*Imposter) error) *Imposter {
 	state := make(map[string]interface{})
-	stubs := NewStubRepository(config.Stubs, logger)
 	encoding := "utf8"
 	
 	if config.Mode == "binary" {
@@ -54,7 +80,6 @@ func NewImposter(config *ImposterConfig, logger *util.Logger, closeFunc func(fun
 		port:              config.Port,
 		protocol:          config.Protocol,
 		name:              config.Name,
-		stubs:             stubs,
 		logger:            logger,
 		state:             state,
 		numberOfRequests:  0,
@@ -63,10 +88,29 @@ func NewImposter(config *ImposterConfig, logger *util.Logger, closeFunc func(fun
 		encoding:          encoding,
 		defaultResponse:   config.DefaultResponse,
 		middleware:        config.Middleware,
+		allowInjection:    allowInjection,
+		saveFunc:          saveFunc,
+		allowCORS:         config.AllowCORS,
+		key:               config.Key,
+		cert:              config.Cert,
+		mutualAuth:        config.MutualAuth,
+		mode:              config.Mode,
+		host:              config.Host,
 	}
 
-	imp.predicateEvaluator = NewPredicateEvaluator(encoding, logger, state)
-	imp.behaviorExecutor = NewBehaviorExecutor(logger, state)
+	onUpdate := func() {
+		if saveFunc != nil {
+			if err := saveFunc(imp); err != nil {
+				logger.Errorf("Failed to save imposter: %v", err)
+			}
+		}
+	}
+
+	stubs := NewStubRepository(config.Stubs, config.Requests, logger, onUpdate)
+	imp.stubs = stubs
+
+	imp.predicateEvaluator = NewPredicateEvaluator(encoding, logger, state, allowInjection)
+	imp.behaviorExecutor = NewBehaviorExecutor(logger, state, allowInjection)
 
 	return imp
 }
@@ -157,6 +201,9 @@ func (imp *Imposter) resolveResponse(config *ResponseConfig, request *Request, r
 		}
 	} else if config.Inject != "" {
 		// Injected response
+		if !imp.allowInjection {
+			return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
+		}
 		// TODO: Implement JavaScript injection
 		imp.logger.Warn("Inject responses not yet implemented")
 		response = &Response{
@@ -206,6 +253,11 @@ func (imp *Imposter) ResetRequests() error {
 	return imp.stubs.DeleteSavedRequests()
 }
 
+// DeleteSavedProxyResponses removes all stubs recorded by a proxy
+func (imp *Imposter) DeleteSavedProxyResponses() error {
+	return imp.stubs.DeleteSavedProxyResponses()
+}
+
 // ToJSON converts the imposter to JSON format
 func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	imp.mu.RLock()
@@ -218,16 +270,81 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		NumberOfRequests: imp.numberOfRequests,
 		RecordRequests:   imp.recordRequests,
 		Middleware:       imp.middleware,
+		DefaultResponse:  imp.defaultResponse,
+		AllowCORS:        imp.allowCORS,
+		Key:              imp.key,
+		Cert:             imp.cert,
+		MutualAuth:       imp.mutualAuth,
+		Mode:             imp.mode,
+		Host:             imp.host,
 	}
 
 	// Include stubs if requested
-	if options == nil || options["replayable"] == true {
-		info.Stubs = imp.stubs.GetAll()
+	includeStubs := true
+	if options != nil {
+		if val, ok := options["stubs"]; ok {
+			if b, ok := val.(bool); ok {
+				includeStubs = b
+			}
+		}
+	}
+
+	// Filter stubs based on options
+	replayable := false
+	if options != nil && options["replayable"] == true {
+		replayable = true
+	}
+	
+	removeProxies := false
+	if options != nil && options["removeProxies"] == true {
+		removeProxies = true
+	}
+
+	if includeStubs {
+		allStubs := imp.stubs.GetAll()
+
+		filteredStubs := make([]Stub, 0, len(allStubs))
+		for i, stub := range allStubs {
+			if removeProxies && stub.IsProxy {
+				continue
+			}
+			
+			if replayable {
+				// Create a copy to remove matches and links
+				stubCopy := stub
+				stubCopy.Matches = nil
+				stubCopy.Links = nil
+				filteredStubs = append(filteredStubs, stubCopy)
+			} else {
+				// Add hypermedia links to stub
+				stubCopy := stub
+				stubCopy.Links = &StubLinks{
+					Self: &Link{
+						Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs/%d", imp.port, i),
+					},
+				}
+				filteredStubs = append(filteredStubs, stubCopy)
+			}
+		}
+		info.Stubs = filteredStubs
 	}
 
 	// Include requests if requested
-	if options == nil || options["requests"] == true {
+	// If replayable is true, requests should be removed regardless of requests option
+	if !replayable && (options == nil || options["requests"] == true) {
 		info.Requests = imp.stubs.LoadRequests()
+	}
+
+	// Add hypermedia links (unless replayable is true)
+	if !replayable {
+		info.Links = &ImposterLinks{
+			Self: &Link{
+				Href: fmt.Sprintf("http://localhost:2525/imposters/%d", imp.port),
+			},
+			Stubs: &Link{
+				Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs", imp.port),
+			},
+		}
 	}
 
 	return info
@@ -250,59 +367,17 @@ func (imp *Imposter) Stubs() *StubRepository {
 
 // executeMiddleware executes global middleware
 func (imp *Imposter) executeMiddleware(request *Request) (*Response, error) {
+	/*
 	if imp.middleware == "" {
 		return nil, nil
 	}
 
+	if !imp.allowInjection {
+		return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
+	}
+
 	vm := goja.New()
-
-	// Create JS-compatible logger
-	jsLogger := map[string]interface{}{
-		"debug": func(msg string, args ...interface{}) { imp.logger.Debugf(msg, args...) },
-		"info":  func(msg string, args ...interface{}) { imp.logger.Infof(msg, args...) },
-		"warn":  func(msg string, args ...interface{}) { imp.logger.Warnf(msg, args...) },
-		"error": func(msg string, args ...interface{}) { imp.logger.Errorf(msg, args...) },
-	}
-
-	// Prepare config object
-	requestMap := make(map[string]interface{})
-	data, _ := json.Marshal(request)
-	json.Unmarshal(data, &requestMap)
-
-	config := map[string]interface{}{
-		"request": requestMap,
-		"logger":  jsLogger,
-		"state":   imp.state,
-	}
-
-	vm.Set("config", config)
-	vm.Set("logger", jsLogger)
-
-	// Wrap code in a function call
-	script := fmt.Sprintf("(%s)(config, logger)", imp.middleware)
-
-	val, err := vm.RunString(script)
-	if err != nil {
-		imp.logger.Errorf("Middleware error: %v", err)
-		return nil, nil // Continue processing on error
-	}
-
-	// Check if middleware returned a response
-	if val != nil && !util.IsUndefined(val) && !util.IsNull(val) {
-		if exported, ok := val.Export().(map[string]interface{}); ok {
-			// If it looks like a response (has statusCode, body, etc), return it
-			response := &Response{}
-			data, _ := json.Marshal(exported)
-			json.Unmarshal(data, response)
-			return response, nil
-		}
-	}
-
-	// Update request from config.request (in case it was modified)
-	if reqObj, ok := config["request"].(map[string]interface{}); ok {
-		data, _ := json.Marshal(reqObj)
-		json.Unmarshal(data, request)
-	}
-
-	return nil, nil
+    // ...
+    */
+    return nil, nil
 }

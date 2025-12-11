@@ -1,5 +1,9 @@
 package models
 
+import (
+	"encoding/json"
+)
+
 // Request represents a protocol-agnostic request
 type Request struct {
 	Protocol      string                 `json:"protocol,omitempty"`
@@ -85,14 +89,63 @@ type JSONPathConfig struct {
 type Behavior struct {
 	Wait          *WaitBehavior          `json:"wait,omitempty"`
 	Decorate      string                 `json:"decorate,omitempty"`
-	Copy          []CopyBehavior         `json:"copy,omitempty"`
+	Copy          CopyBehaviorList       `json:"copy,omitempty"`
 	Lookup        *LookupBehavior        `json:"lookup,omitempty"`
 	ShellTransform string                `json:"shellTransform,omitempty"`
 }
 
 // WaitBehavior represents a wait/latency behavior
 type WaitBehavior struct {
-	Milliseconds int `json:"milliseconds,omitempty"`
+	Milliseconds int    `json:"milliseconds,omitempty"`
+	Fn           string `json:"fn,omitempty"` // For JS injection
+}
+
+// UnmarshalJSON implements custom unmarshaling for WaitBehavior
+func (w *WaitBehavior) UnmarshalJSON(data []byte) error {
+	// Try number
+	var ms int
+	if err := json.Unmarshal(data, &ms); err == nil {
+		w.Milliseconds = ms
+		return nil
+	}
+
+	// Try string
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		w.Fn = s
+		return nil
+	}
+
+	// Try object
+	type Alias WaitBehavior
+	var aux Alias
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*w = WaitBehavior(aux)
+	return nil
+}
+
+// CopyBehaviorList represents a list of copy behaviors
+type CopyBehaviorList []CopyBehavior
+
+// UnmarshalJSON implements custom unmarshaling for CopyBehaviorList
+func (l *CopyBehaviorList) UnmarshalJSON(data []byte) error {
+	// Try object (single item)
+	var single CopyBehavior
+	if err := json.Unmarshal(data, &single); err == nil {
+		*l = CopyBehaviorList{single}
+		return nil
+	}
+
+	// Try array
+	var list []CopyBehavior
+	if err := json.Unmarshal(data, &list); err == nil {
+		*l = CopyBehaviorList(list)
+		return nil
+	}
+
+	return nil
 }
 
 // CopyBehavior represents a copy behavior
@@ -165,10 +218,29 @@ type FaultConfig struct {
 	Fault string `json:"fault"`
 }
 
+// Match represents a debug match entry
+type Match struct {
+	Timestamp      string          `json:"timestamp"`
+	Request        *Request        `json:"request"`
+	Response       *Response       `json:"response"`
+	ResponseConfig *ResponseConfig `json:"responseConfig"`
+	Duration       int             `json:"duration"`
+}
+
 // Stub represents a stub with predicates and responses
 type Stub struct {
 	Predicates []Predicate      `json:"predicates,omitempty"`
 	Responses  []ResponseConfig `json:"responses"`
+	Matches    []Match          `json:"matches,omitempty"`
+	Links      *StubLinks       `json:"_links,omitempty"`
+	
+	// Internal
+	IsProxy    bool             `json:"-"`
+}
+
+// StubLinks contains hypermedia links for a stub
+type StubLinks struct {
+	Self *Link `json:"self"`
 }
 
 // ImposterConfig represents the configuration for creating an imposter
@@ -181,6 +253,7 @@ type ImposterConfig struct {
 	DefaultResponse   *Response              `json:"defaultResponse,omitempty"`
 	AllowCORS         bool                   `json:"allowCORS,omitempty"`
 	Middleware        string                 `json:"middleware,omitempty"`
+	Requests          []*Request             `json:"requests,omitempty"`
 	
 	// HTTP-specific
 	Key               string                 `json:"key,omitempty"`

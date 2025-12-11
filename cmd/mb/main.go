@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/mountebank-testing/mountebank-go/internal/config"
@@ -22,6 +23,20 @@ var (
 	pidFile        string
 	configFile     string
 	saveFile       string
+	logFile        string
+	noLogFile      bool
+	datadir        string
+	impostersRepo  string
+	ipWhitelist    string
+	origin         []string
+	apiKey         string
+	debug          bool
+	localOnly      bool
+	protoFile      string
+	rcFile         string
+	formatter      string
+	noParse        bool
+	logConfig      string
 )
 
 func main() {
@@ -44,6 +59,20 @@ func main() {
 	startCmd.Flags().BoolVar(&allowInjection, "allowInjection", false, "Allow JavaScript injection")
 	startCmd.Flags().StringVar(&pidFile, "pidfile", "mb.pid", "PID file location")
 	startCmd.Flags().StringVar(&configFile, "configfile", "", "Configuration file to load")
+	startCmd.Flags().StringVar(&logFile, "logfile", "mb.log", "Log file location")
+	startCmd.Flags().BoolVar(&noLogFile, "nologfile", false, "Prevent logging to the filesystem")
+	startCmd.Flags().StringVar(&datadir, "datadir", "", "The directory to save imposters to")
+	startCmd.Flags().StringVar(&ipWhitelist, "ipWhitelist", "*", "IP whitelist (pipe-delimited)")
+	startCmd.Flags().StringSliceVar(&origin, "origin", []string{}, "Allowed CORS origins")
+	startCmd.Flags().StringVar(&apiKey, "apikey", "", "API key for authentication")
+	startCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode")
+	startCmd.Flags().BoolVar(&localOnly, "localOnly", false, "Only allow connections from localhost")
+	startCmd.Flags().StringVar(&protoFile, "protofile", "protocols.json", "Custom protocol file")
+	startCmd.Flags().StringVar(&rcFile, "rcfile", "", "Run commands file")
+	startCmd.Flags().StringVar(&formatter, "formatter", "", "Custom formatter")
+	startCmd.Flags().BoolVar(&noParse, "noParse", false, "Disable EJS parsing")
+	startCmd.Flags().StringVar(&logConfig, "log", "", "JSON logging configuration")
+	startCmd.Flags().StringVar(&impostersRepo, "impostersRepository", "", "Custom imposters repository")
 
 	// Stop command
 	stopCmd := &cobra.Command{
@@ -104,12 +133,78 @@ func main() {
 }
 
 func runStart(cmd *cobra.Command, args []string) {
+	// Warn about unimplemented flags
+	if protoFile != "protocols.json" {
+		fmt.Println("Warning: --protofile is not yet implemented")
+	}
+	if formatter != "" {
+		fmt.Println("Warning: --formatter is not yet implemented")
+	}
+	if noParse {
+		fmt.Println("Warning: --noParse is not yet implemented")
+	}
+	if logConfig != "" {
+		fmt.Println("Warning: --log is not yet implemented")
+	}
+
+	// Load rcfile
+	rcPath := rcFile
+	if rcPath == "" {
+		// Check for .mbrc in current directory
+		if _, err := os.Stat(".mbrc"); err == nil {
+			rcPath = ".mbrc"
+		}
+	}
+
+	if rcPath != "" {
+		options, err := config.ParseRCFile(rcPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing rcfile %s: %v\n", rcPath, err)
+		} else {
+			for k, v := range options {
+				// Check if flag exists
+				f := cmd.Flags().Lookup(k)
+				if f != nil {
+					// Check if changed by user
+					if !cmd.Flags().Changed(k) {
+						if err := f.Value.Set(v); err != nil {
+							fmt.Fprintf(os.Stderr, "Error setting flag %s from rcfile: %v\n", k, err)
+						}
+					}
+				} else {
+					fmt.Printf("Warning: Unknown option in rcfile: %s\n", k)
+				}
+			}
+		}
+	}
+
+	var whitelist []string
+	if localOnly {
+		whitelist = []string{"127.0.0.1", "::1"}
+	} else if ipWhitelist != "*" {
+		whitelist = strings.Split(ipWhitelist, "|")
+	} else {
+		whitelist = []string{"*"}
+	}
+
 	serverConfig := &server.Config{
 		Port:           port,
 		Host:           host,
 		LogLevel:       logLevel,
 		AllowInjection: allowInjection,
-		IPWhitelist:    []string{"*"},
+		IPWhitelist:    whitelist,
+		LogFile:        logFile,
+		NoLogFile:      noLogFile,
+		Datadir:        datadir,
+		Origin:         origin,
+		APIKey:         apiKey,
+		Debug:          debug,
+		LocalOnly:      localOnly,
+		ProtoFile:      protoFile,
+		Formatter:      formatter,
+		NoParse:        noParse,
+		LogConfig:      logConfig,
+		ImpostersRepo:  impostersRepo,
 	}
 
 	srv, err := server.New(serverConfig)
