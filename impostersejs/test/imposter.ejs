@@ -1,3 +1,4 @@
-{ "port": 4000, "protocol": "http", "name": "test-imposter-1", "recordRequests":
-true, "stubs": [ { "predicates": [ {"startsWith": { "path": "/test" }} ],
-"responses": [ { "is": { "statusCode": 200, "body": "Hello World" } } ] } ] }
+{ "port": 4012, "protocol": "http", "name": "c360-mock", "recordRequests": true,
+"stubs": [ { "predicates": [ { "matches": { "path":
+"/360customer/v2/foundation/customers/inquiry_results" } } ], "responses": [{
+"inject": "<%- stringify(filename, 'getC360Pan15.js') %>" }] } ] }

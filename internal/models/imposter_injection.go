@@ -11,6 +11,8 @@ import (
 func (imp *Imposter) evaluateInject(injectFunction string, request *Request, requestDetails map[string]interface{}) (*Response, error) {
 	vm := goja.New()
 
+	vm.SetFieldNameMapper(goja.TagFieldNameMapper("json", true))
+
 	// Set request
 	reqVal := vm.ToValue(request)
 	vm.Set("request", reqVal)
@@ -25,10 +27,35 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 
 	// Polyfill console to map to logger
 	consoleObj := vm.NewObject()
-	consoleObj.Set("log", func(msg string) { imp.logger.Info(msg) })
-	consoleObj.Set("info", func(msg string) { imp.logger.Info(msg) })
-	consoleObj.Set("warn", func(msg string) { imp.logger.Warn(msg) })
-	consoleObj.Set("error", func(msg string) { imp.logger.Error(msg) })
+	logFn := func(call goja.FunctionCall) goja.Value {
+		var args []interface{}
+		for _, arg := range call.Arguments {
+			args = append(args, arg.Export())
+		}
+		imp.logger.Info(fmt.Sprint(args...))
+		return goja.Undefined()
+	}
+	warnFn := func(call goja.FunctionCall) goja.Value {
+		var args []interface{}
+		for _, arg := range call.Arguments {
+			args = append(args, arg.Export())
+		}
+		imp.logger.Warn(fmt.Sprint(args...))
+		return goja.Undefined()
+	}
+	errorFn := func(call goja.FunctionCall) goja.Value {
+		var args []interface{}
+		for _, arg := range call.Arguments {
+			args = append(args, arg.Export())
+		}
+		imp.logger.Error(fmt.Sprint(args...))
+		return goja.Undefined()
+	}
+
+	consoleObj.Set("log", logFn)
+	consoleObj.Set("info", logFn)
+	consoleObj.Set("warn", warnFn)
+	consoleObj.Set("error", errorFn)
 	vm.Set("console", consoleObj)
 
 	// Wrap in a function call
