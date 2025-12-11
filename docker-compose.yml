@@ -7,11 +7,12 @@ services:
     container_name: mountebank-go
     ports:
       - "2525:2525"
+      - "4011:4011"
       - "4012:4012"
+      - "4013:4013"
     # command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /app/impostersejs/imposters.ejs --allowInjection --datadir /app/data
     command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /mountebank-templates/imposters.ejs --allowInjection
     environment:
-      - MB_PORT=2525 # Kept for reference, though not used by app directly
       - MB_LOG_LEVEL=info
     volumes:
       - ./mountebank-templates:/mountebank-templates
