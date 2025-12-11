@@ -23,7 +23,7 @@ clean:
 
 # Run the server
 run: build
-	./mb start
+	./mb start --allowInjection
 
 # Install dependencies
 deps:

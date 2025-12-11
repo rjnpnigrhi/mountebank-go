@@ -9,51 +9,51 @@ import (
 
 // Imposter represents a virtual service
 type Imposter struct {
-	port              int
-	protocol          string
-	name              string
-	stubs             *StubRepository
-	logger            *util.Logger
-	state             map[string]interface{}
-	numberOfRequests  int
-	recordRequests    bool
-	closeFunc         func(func()) error
-	encoding          string
-	mu                sync.RWMutex
+	port               int
+	protocol           string
+	name               string
+	stubs              *StubRepository
+	logger             *util.Logger
+	state              map[string]interface{}
+	numberOfRequests   int
+	recordRequests     bool
+	closeFunc          func(func()) error
+	encoding           string
+	mu                 sync.RWMutex
 	predicateEvaluator *PredicateEvaluator
 	behaviorExecutor   *BehaviorExecutor
 	defaultResponse    *Response
 	middleware         string
 	allowInjection     bool
 	saveFunc           func(*Imposter) error
-	
+
 	// Config fields for persistence
-	allowCORS          bool
-	key                string
-	cert               string
-	mutualAuth         bool
-	mode               string
-	host               string
+	allowCORS  bool
+	key        string
+	cert       string
+	mutualAuth bool
+	mode       string
+	host       string
 }
 
 // ImposterInfo contains information about an imposter
 type ImposterInfo struct {
-	Port             int                    `json:"port"`
-	Protocol         string                 `json:"protocol"`
-	Name             string                 `json:"name,omitempty"`
-	NumberOfRequests int                    `json:"numberOfRequests"`
-	RecordRequests   bool                   `json:"recordRequests,omitempty"`
-	Requests         []*Request             `json:"requests,omitempty"`
-	Stubs            []Stub                 `json:"stubs,omitempty"`
-	Middleware       string                 `json:"middleware,omitempty"`
-	DefaultResponse  *Response              `json:"defaultResponse,omitempty"`
-	AllowCORS        bool                   `json:"allowCORS,omitempty"`
-	Key              string                 `json:"key,omitempty"`
-	Cert             string                 `json:"cert,omitempty"`
-	MutualAuth       bool                   `json:"mutualAuth,omitempty"`
-	Mode             string                 `json:"mode,omitempty"`
-	Host             string                 `json:"host,omitempty"`
-	Links            *ImposterLinks         `json:"_links,omitempty"`
+	Port             int            `json:"port"`
+	Protocol         string         `json:"protocol"`
+	Name             string         `json:"name,omitempty"`
+	NumberOfRequests int            `json:"numberOfRequests"`
+	RecordRequests   bool           `json:"recordRequests,omitempty"`
+	Requests         []*Request     `json:"requests,omitempty"`
+	Stubs            []Stub         `json:"stubs,omitempty"`
+	Middleware       string         `json:"middleware,omitempty"`
+	DefaultResponse  *Response      `json:"defaultResponse,omitempty"`
+	AllowCORS        bool           `json:"allowCORS,omitempty"`
+	Key              string         `json:"key,omitempty"`
+	Cert             string         `json:"cert,omitempty"`
+	MutualAuth       bool           `json:"mutualAuth,omitempty"`
+	Mode             string         `json:"mode,omitempty"`
+	Host             string         `json:"host,omitempty"`
+	Links            *ImposterLinks `json:"_links,omitempty"`
 }
 
 // ImposterLinks contains hypermedia links for an imposter
@@ -71,31 +71,31 @@ type Link struct {
 func NewImposter(config *ImposterConfig, logger *util.Logger, allowInjection bool, closeFunc func(func()) error, saveFunc func(*Imposter) error) *Imposter {
 	state := make(map[string]interface{})
 	encoding := "utf8"
-	
+
 	if config.Mode == "binary" {
 		encoding = "base64"
 	}
 
 	imp := &Imposter{
-		port:              config.Port,
-		protocol:          config.Protocol,
-		name:              config.Name,
-		logger:            logger,
-		state:             state,
-		numberOfRequests:  0,
-		recordRequests:    config.RecordRequests,
-		closeFunc:         closeFunc,
-		encoding:          encoding,
-		defaultResponse:   config.DefaultResponse,
-		middleware:        config.Middleware,
-		allowInjection:    allowInjection,
-		saveFunc:          saveFunc,
-		allowCORS:         config.AllowCORS,
-		key:               config.Key,
-		cert:              config.Cert,
-		mutualAuth:        config.MutualAuth,
-		mode:              config.Mode,
-		host:              config.Host,
+		port:             config.Port,
+		protocol:         config.Protocol,
+		name:             config.Name,
+		logger:           logger,
+		state:            state,
+		numberOfRequests: 0,
+		recordRequests:   config.RecordRequests,
+		closeFunc:        closeFunc,
+		encoding:         encoding,
+		defaultResponse:  config.DefaultResponse,
+		middleware:       config.Middleware,
+		allowInjection:   allowInjection,
+		saveFunc:         saveFunc,
+		allowCORS:        config.AllowCORS,
+		key:              config.Key,
+		cert:             config.Cert,
+		mutualAuth:       config.MutualAuth,
+		mode:             config.Mode,
+		host:             config.Host,
 	}
 
 	onUpdate := func() {
@@ -204,11 +204,11 @@ func (imp *Imposter) resolveResponse(config *ResponseConfig, request *Request, r
 		if !imp.allowInjection {
 			return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
 		}
-		// TODO: Implement JavaScript injection
-		imp.logger.Warn("Inject responses not yet implemented")
-		response = &Response{
-			StatusCode: 200,
-			Body:       "Inject not implemented",
+
+		var err error
+		response, err = imp.evaluateInject(config.Inject, request, requestDetails)
+		if err != nil {
+			return nil, err
 		}
 	} else if config.Fault != nil {
 		// Fault response
@@ -294,7 +294,7 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	if options != nil && options["replayable"] == true {
 		replayable = true
 	}
-	
+
 	removeProxies := false
 	if options != nil && options["removeProxies"] == true {
 		removeProxies = true
@@ -308,7 +308,7 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 			if removeProxies && stub.IsProxy {
 				continue
 			}
-			
+
 			if replayable {
 				// Create a copy to remove matches and links
 				stubCopy := stub
@@ -368,16 +368,16 @@ func (imp *Imposter) Stubs() *StubRepository {
 // executeMiddleware executes global middleware
 func (imp *Imposter) executeMiddleware(request *Request) (*Response, error) {
 	/*
-	if imp.middleware == "" {
-		return nil, nil
-	}
+			if imp.middleware == "" {
+				return nil, nil
+			}
 
-	if !imp.allowInjection {
-		return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
-	}
+			if !imp.allowInjection {
+				return nil, fmt.Errorf("invalid injection: JavaScript injection is not allowed unless mb is run with the --allowInjection flag")
+			}
 
-	vm := goja.New()
-    // ...
-    */
-    return nil, nil
+			vm := goja.New()
+		    // ...
+	*/
+	return nil, nil
 }
