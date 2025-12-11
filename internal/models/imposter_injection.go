@@ -23,6 +23,14 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 	logObj.Set("error", func(msg string) { imp.logger.Error(msg) })
 	vm.Set("logger", logObj)
 
+	// Polyfill console to map to logger
+	consoleObj := vm.NewObject()
+	consoleObj.Set("log", func(msg string) { imp.logger.Info(msg) })
+	consoleObj.Set("info", func(msg string) { imp.logger.Info(msg) })
+	consoleObj.Set("warn", func(msg string) { imp.logger.Warn(msg) })
+	consoleObj.Set("error", func(msg string) { imp.logger.Error(msg) })
+	vm.Set("console", consoleObj)
+
 	// Wrap in a function call
 	script := fmt.Sprintf(`
 		(function() {
