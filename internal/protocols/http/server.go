@@ -214,15 +214,13 @@ func (s *Server) httpToRequest(r *http.Request) (*models.Request, error) {
 
 // responseToHTTP converts a mountebank response to an HTTP response
 func (s *Server) responseToHTTP(response *models.Response, w http.ResponseWriter) {
-	// Set status code
-	statusCode := response.StatusCode
-	if statusCode == 0 {
-		statusCode = 200
-	}
-
-	// Set headers
+	// 1. Process headers from config
+	hasContentType := false
 	if response.Headers != nil {
 		for key, value := range response.Headers {
+			if strings.EqualFold(key, "Content-Type") {
+				hasContentType = true
+			}
 			switch v := value.(type) {
 			case string:
 				w.Header().Set(key, v)
@@ -236,25 +234,48 @@ func (s *Server) responseToHTTP(response *models.Response, w http.ResponseWriter
 		}
 	}
 
-	// Write status code
-	w.WriteHeader(statusCode)
+	// 2. Prepare body and determine implicit content type
+	var bodyBytes []byte
+	implicitJSON := false
 
-	// Write body
 	if response.Body != nil {
-		switch body := response.Body.(type) {
+		switch b := response.Body.(type) {
 		case string:
-			w.Write([]byte(body))
+			bodyBytes = []byte(b)
 		case []byte:
-			w.Write(body)
+			bodyBytes = b
 		default:
 			// Try to marshal as JSON
-			if data, err := json.Marshal(body); err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.Write(data)
+			if data, err := json.Marshal(b); err == nil {
+				bodyBytes = data
+				implicitJSON = true
 			} else {
-				w.Write([]byte(fmt.Sprint(body)))
+				bodyBytes = []byte(fmt.Sprint(b))
 			}
 		}
+	}
+
+	// 3. Set implicit content type or suppress sniffing
+	if !hasContentType {
+		if implicitJSON {
+			w.Header().Set("Content-Type", "application/json")
+		} else {
+			// Suppress sniffing for explicit text/bytes to match Node.js behavior
+			// Setting to empty string prevents Go from detecting Content-Type
+			w.Header().Set("Content-Type", "")
+		}
+	}
+
+	// 4. Write status code
+	statusCode := response.StatusCode
+	if statusCode == 0 {
+		statusCode = 200
+	}
+	w.WriteHeader(statusCode)
+
+	// 5. Write body
+	if len(bodyBytes) > 0 {
+		w.Write(bodyBytes)
 	}
 }
 

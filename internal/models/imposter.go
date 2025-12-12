@@ -43,7 +43,7 @@ type ImposterInfo struct {
 	Name             string         `json:"name,omitempty"`
 	NumberOfRequests int            `json:"numberOfRequests"`
 	RecordRequests   bool           `json:"recordRequests,omitempty"`
-	Requests         []*Request     `json:"requests,omitempty"`
+	Requests         *[]*Request    `json:"requests,omitempty"` // Changed to pointer to slice
 	Stubs            []Stub         `json:"stubs,omitempty"`
 	Middleware       string         `json:"middleware,omitempty"`
 	DefaultResponse  *Response      `json:"defaultResponse,omitempty"`
@@ -332,7 +332,12 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	// Include requests if requested
 	// If replayable is true, requests should be removed regardless of requests option
 	if !replayable && (options == nil || options["requests"] == true) {
-		info.Requests = imp.stubs.LoadRequests()
+		reqs := imp.stubs.LoadRequests()
+		// Ensure non-nil slice so pointer is not nil even if empty
+		if reqs == nil {
+			reqs = make([]*Request, 0)
+		}
+		info.Requests = &reqs
 	}
 
 	// Add hypermedia links (unless replayable is true)
