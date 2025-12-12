@@ -123,6 +123,9 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 					},
 				},
 			})
+		} else if strings.Contains(err.Error(), "injection execution failed") {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 		} else {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
