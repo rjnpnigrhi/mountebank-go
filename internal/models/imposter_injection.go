@@ -36,6 +36,14 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 		}
 	}
 
+	// Ensure body is present (default to empty string if nil/missing) to avoid undefined in JS
+	if _, ok := reqMap["body"]; !ok {
+		reqMap["body"] = ""
+	}
+
+	// Add 'Body' alias to support scripts using request.Body (deprecated but used in templates)
+	reqMap["Body"] = reqMap["body"]
+
 	vm.Set("request", reqMap)
 
 	// Set logger
