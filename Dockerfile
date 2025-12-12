@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git make
@@ -16,8 +16,11 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+ARG TARGETOS
+ARG TARGETARCH
+
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o mb cmd/mb/main.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o mb cmd/mb/main.go
 
 # Runtime stage
 FROM alpine:latest
