@@ -6,72 +6,73 @@ import (
 
 // Request represents a protocol-agnostic request
 type Request struct {
-	Protocol      string                 `json:"protocol,omitempty"`
-	IP            string                 `json:"ip,omitempty"`
-	Timestamp     string                 `json:"timestamp,omitempty"`
-	
+	RequestFrom string `json:"requestFrom"`
+	Protocol    string `json:"protocol,omitempty"` // User didn't ask for this but it's standard MB
+	IP          string `json:"ip"`
+	Timestamp   string `json:"timestamp"`
+
 	// HTTP-specific fields
-	Method        string                 `json:"method,omitempty"`
-	Path          string                 `json:"path,omitempty"`
-	Query         map[string]interface{} `json:"query,omitempty"`
-	Headers       map[string]interface{} `json:"headers,omitempty"`
-	Body          interface{}            `json:"body,omitempty"`
-	
+	Method  string                 `json:"method"`
+	Path    string                 `json:"path"`
+	Query   map[string]interface{} `json:"query"`
+	Headers map[string]interface{} `json:"headers"`
+	Body    interface{}            `json:"body"`
+
 	// TCP-specific fields
-	Data          string                 `json:"data,omitempty"`
-	
+	Data string `json:"data,omitempty"`
+
 	// SMTP-specific fields
-	From          string                 `json:"from,omitempty"`
-	To            []string               `json:"to,omitempty"`
-	Subject       string                 `json:"subject,omitempty"`
-	Text          string                 `json:"text,omitempty"`
-	HTML          string                 `json:"html,omitempty"`
-	
+	From    string   `json:"from,omitempty"`
+	To      []string `json:"to,omitempty"`
+	Subject string   `json:"subject,omitempty"`
+	Text    string   `json:"text,omitempty"`
+	HTML    string   `json:"html,omitempty"`
+
 	// Internal fields
-	IsDryRun      bool                   `json:"-"`
+	IsDryRun bool `json:"-"`
 }
 
 // Response represents a protocol-agnostic response
 type Response struct {
 	// HTTP-specific fields
-	StatusCode    int                    `json:"statusCode,omitempty"`
-	Headers       map[string]interface{} `json:"headers,omitempty"`
-	Body          interface{}            `json:"body,omitempty"`
-	
+	StatusCode int                    `json:"statusCode,omitempty"`
+	Headers    map[string]interface{} `json:"headers,omitempty"`
+	Body       interface{}            `json:"body,omitempty"`
+
 	// TCP-specific fields
-	Data          string                 `json:"data,omitempty"`
-	
+	Data string `json:"data,omitempty"`
+
 	// SMTP-specific fields
-	Response      string                 `json:"response,omitempty"`
-	
+	Response string `json:"response,omitempty"`
+
 	// Proxy-specific fields
-	Proxy         interface{}            `json:"proxy,omitempty"`
-	CallbackURL   string                 `json:"callbackURL,omitempty"`
-	
+	Proxy       interface{} `json:"proxy,omitempty"`
+	CallbackURL string      `json:"callbackURL,omitempty"`
+
 	// Internal fields
-	ProxyResponseTime int                `json:"_proxyResponseTime,omitempty"`
-	Blocked           bool               `json:"blocked,omitempty"`
-	Code              string             `json:"code,omitempty"`
+	ProxyResponseTime int    `json:"_proxyResponseTime,omitempty"`
+	Blocked           bool   `json:"blocked,omitempty"`
+	Code              string `json:"code,omitempty"`
 }
 
 // Predicate represents a request matching condition
 type Predicate struct {
-	Equals           interface{}            `json:"equals,omitempty"`
-	DeepEquals       interface{}            `json:"deepEquals,omitempty"`
-	Contains         interface{}            `json:"contains,omitempty"`
-	StartsWith       interface{}            `json:"startsWith,omitempty"`
-	EndsWith         interface{}            `json:"endsWith,omitempty"`
-	Matches          interface{}            `json:"matches,omitempty"`
-	Exists           interface{}            `json:"exists,omitempty"`
-	Not              *Predicate             `json:"not,omitempty"`
-	Or               []Predicate            `json:"or,omitempty"`
-	And              []Predicate            `json:"and,omitempty"`
-	Inject           string                 `json:"inject,omitempty"`
-	
-	CaseSensitive    *bool                  `json:"caseSensitive,omitempty"`
-	Except           string                 `json:"except,omitempty"`
-	XPath            *XPathConfig           `json:"xpath,omitempty"`
-	JSONPath         *JSONPathConfig        `json:"jsonpath,omitempty"`
+	Equals     interface{} `json:"equals,omitempty"`
+	DeepEquals interface{} `json:"deepEquals,omitempty"`
+	Contains   interface{} `json:"contains,omitempty"`
+	StartsWith interface{} `json:"startsWith,omitempty"`
+	EndsWith   interface{} `json:"endsWith,omitempty"`
+	Matches    interface{} `json:"matches,omitempty"`
+	Exists     interface{} `json:"exists,omitempty"`
+	Not        *Predicate  `json:"not,omitempty"`
+	Or         []Predicate `json:"or,omitempty"`
+	And        []Predicate `json:"and,omitempty"`
+	Inject     string      `json:"inject,omitempty"`
+
+	CaseSensitive *bool           `json:"caseSensitive,omitempty"`
+	Except        string          `json:"except,omitempty"`
+	XPath         *XPathConfig    `json:"xpath,omitempty"`
+	JSONPath      *JSONPathConfig `json:"jsonpath,omitempty"`
 }
 
 // XPathConfig represents XPath selector configuration
@@ -87,11 +88,11 @@ type JSONPathConfig struct {
 
 // Behavior represents a response transformation
 type Behavior struct {
-	Wait          *WaitBehavior          `json:"wait,omitempty"`
-	Decorate      string                 `json:"decorate,omitempty"`
-	Copy          CopyBehaviorList       `json:"copy,omitempty"`
-	Lookup        *LookupBehavior        `json:"lookup,omitempty"`
-	ShellTransform string                `json:"shellTransform,omitempty"`
+	Wait           *WaitBehavior    `json:"wait,omitempty"`
+	Decorate       string           `json:"decorate,omitempty"`
+	Copy           CopyBehaviorList `json:"copy,omitempty"`
+	Lookup         *LookupBehavior  `json:"lookup,omitempty"`
+	ShellTransform string           `json:"shellTransform,omitempty"`
 }
 
 // WaitBehavior represents a wait/latency behavior
@@ -150,9 +151,9 @@ func (l *CopyBehaviorList) UnmarshalJSON(data []byte) error {
 
 // CopyBehavior represents a copy behavior
 type CopyBehavior struct {
-	From          string        `json:"from"`
-	Into          string        `json:"into"`
-	Using         *CopySelector `json:"using,omitempty"`
+	From  string        `json:"from"`
+	Into  string        `json:"into"`
+	Using *CopySelector `json:"using,omitempty"`
 }
 
 // CopySelector represents a selector for copy behavior
@@ -165,52 +166,52 @@ type CopySelector struct {
 
 // LookupBehavior represents a lookup behavior
 type LookupBehavior struct {
-	Key           map[string]interface{} `json:"key"`
-	FromDataSource *DataSource           `json:"fromDataSource"`
-	Into          string                 `json:"into"`
+	Key            map[string]interface{} `json:"key"`
+	FromDataSource *DataSource            `json:"fromDataSource"`
+	Into           string                 `json:"into"`
 }
 
 // DataSource represents a data source for lookup
 type DataSource struct {
-	CSV           *CSVDataSource         `json:"csv,omitempty"`
+	CSV *CSVDataSource `json:"csv,omitempty"`
 }
 
 // CSVDataSource represents a CSV data source
 type CSVDataSource struct {
-	Path          string `json:"path"`
-	KeyColumn     string `json:"keyColumn"`
-	ColumnInto    map[string]string `json:"columnInto,omitempty"`
+	Path       string            `json:"path"`
+	KeyColumn  string            `json:"keyColumn"`
+	ColumnInto map[string]string `json:"columnInto,omitempty"`
 }
 
 // PredicateGenerator represents a predicate generator for proxy
 type PredicateGenerator struct {
-	Matches       map[string]interface{} `json:"matches,omitempty"`
-	CaseSensitive *bool                  `json:"caseSensitive,omitempty"`
-	Except        string                 `json:"except,omitempty"`
-	XPath         *XPathConfig           `json:"xpath,omitempty"`
-	JSONPath      *JSONPathConfig        `json:"jsonpath,omitempty"`
-	Inject        string                 `json:"inject,omitempty"`
-	Ignore        map[string]interface{} `json:"ignore,omitempty"`
-	PredicateOperator string             `json:"predicateOperator,omitempty"`
+	Matches           map[string]interface{} `json:"matches,omitempty"`
+	CaseSensitive     *bool                  `json:"caseSensitive,omitempty"`
+	Except            string                 `json:"except,omitempty"`
+	XPath             *XPathConfig           `json:"xpath,omitempty"`
+	JSONPath          *JSONPathConfig        `json:"jsonpath,omitempty"`
+	Inject            string                 `json:"inject,omitempty"`
+	Ignore            map[string]interface{} `json:"ignore,omitempty"`
+	PredicateOperator string                 `json:"predicateOperator,omitempty"`
 }
 
 // ResponseConfig represents a response configuration
 type ResponseConfig struct {
-	Is            *Response              `json:"is,omitempty"`
-	Proxy         *ProxyConfig           `json:"proxy,omitempty"`
-	Inject        string                 `json:"inject,omitempty"`
-	Fault         *FaultConfig           `json:"fault,omitempty"`
-	Behaviors     []Behavior             `json:"behaviors,omitempty"`
-	Repeat        int                    `json:"repeat,omitempty"`
+	Is        *Response    `json:"is,omitempty"`
+	Proxy     *ProxyConfig `json:"proxy,omitempty"`
+	Inject    string       `json:"inject,omitempty"`
+	Fault     *FaultConfig `json:"fault,omitempty"`
+	Behaviors []Behavior   `json:"behaviors,omitempty"`
+	Repeat    int          `json:"repeat,omitempty"`
 }
 
 // ProxyConfig represents proxy configuration
 type ProxyConfig struct {
-	To                   string                  `json:"to"`
-	Mode                 string                  `json:"mode,omitempty"`
-	PredicateGenerators  []PredicateGenerator    `json:"predicateGenerators,omitempty"`
-	AddWaitBehavior      bool                    `json:"addWaitBehavior,omitempty"`
-	AddDecorateBehavior  string                  `json:"addDecorateBehavior,omitempty"`
+	To                  string               `json:"to"`
+	Mode                string               `json:"mode,omitempty"`
+	PredicateGenerators []PredicateGenerator `json:"predicateGenerators,omitempty"`
+	AddWaitBehavior     bool                 `json:"addWaitBehavior,omitempty"`
+	AddDecorateBehavior string               `json:"addDecorateBehavior,omitempty"`
 }
 
 // FaultConfig represents fault injection configuration
@@ -233,9 +234,9 @@ type Stub struct {
 	Responses  []ResponseConfig `json:"responses"`
 	Matches    []Match          `json:"matches,omitempty"`
 	Links      *StubLinks       `json:"_links,omitempty"`
-	
+
 	// Internal
-	IsProxy    bool             `json:"-"`
+	IsProxy bool `json:"-"`
 }
 
 // StubLinks contains hypermedia links for a stub
@@ -245,24 +246,24 @@ type StubLinks struct {
 
 // ImposterConfig represents the configuration for creating an imposter
 type ImposterConfig struct {
-	Protocol          string                 `json:"protocol"`
-	Port              int                    `json:"port,omitempty"`
-	Name              string                 `json:"name,omitempty"`
-	RecordRequests    bool                   `json:"recordRequests,omitempty"`
-	Stubs             []Stub                 `json:"stubs,omitempty"`
-	DefaultResponse   *Response              `json:"defaultResponse,omitempty"`
-	AllowCORS         bool                   `json:"allowCORS,omitempty"`
-	Middleware        string                 `json:"middleware,omitempty"`
-	Requests          []*Request             `json:"requests,omitempty"`
-	
+	Protocol        string     `json:"protocol"`
+	Port            int        `json:"port,omitempty"`
+	Name            string     `json:"name,omitempty"`
+	RecordRequests  bool       `json:"recordRequests,omitempty"`
+	Stubs           []Stub     `json:"stubs,omitempty"`
+	DefaultResponse *Response  `json:"defaultResponse,omitempty"`
+	AllowCORS       bool       `json:"allowCORS,omitempty"`
+	Middleware      string     `json:"middleware,omitempty"`
+	Requests        []*Request `json:"requests,omitempty"`
+
 	// HTTP-specific
-	Key               string                 `json:"key,omitempty"`
-	Cert              string                 `json:"cert,omitempty"`
-	MutualAuth        bool                   `json:"mutualAuth,omitempty"`
-	
+	Key        string `json:"key,omitempty"`
+	Cert       string `json:"cert,omitempty"`
+	MutualAuth bool   `json:"mutualAuth,omitempty"`
+
 	// TCP-specific
-	Mode              string                 `json:"mode,omitempty"`
-	
+	Mode string `json:"mode,omitempty"`
+
 	// Common
-	Host              string                 `json:"host,omitempty"`
+	Host string `json:"host,omitempty"`
 }

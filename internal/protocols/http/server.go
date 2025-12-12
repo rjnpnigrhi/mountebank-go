@@ -200,15 +200,27 @@ func (s *Server) httpToRequest(r *http.Request) (*models.Request, error) {
 		}
 	}
 
+	// Default body to empty string if not present
+	if body == nil {
+		body = ""
+	}
+
+	// Extract IP from RemoteAddr
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+
 	return &models.Request{
-		Protocol:  "http",
-		Method:    r.Method,
-		Path:      r.URL.Path,
-		Query:     query,
-		Headers:   headers,
-		Body:      body,
-		IP:        r.RemoteAddr,
-		Timestamp: time.Now().Format(time.RFC3339),
+		RequestFrom: r.RemoteAddr,
+		Protocol:    "http",
+		Method:      r.Method,
+		Path:        r.URL.Path,
+		Query:       query,
+		Headers:     headers,
+		Body:        body,
+		IP:          host,
+		Timestamp:   time.Now().Format(time.RFC3339),
 	}, nil
 }
 
