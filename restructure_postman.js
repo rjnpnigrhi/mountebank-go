@@ -6,7 +6,7 @@ function createSetupItem(port) {
     return {
         "name": `Setup Imposter ${port}`,
         "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [
                 {
                     "key": "Content-Type",
@@ -20,8 +20,12 @@ function createSetupItem(port) {
             "body": {
                 "mode": "raw",
                 "raw": JSON.stringify({
-                    port: parseInt(port),
-                    protocol: "http"
+                    imposters: [
+                        {
+                            port: parseInt(port),
+                            protocol: "http"
+                        }
+                    ]
                 }, null, 2)
             },
             "url": {
@@ -35,8 +39,8 @@ function createSetupItem(port) {
                 "listen": "test",
                 "script": {
                     "exec": [
-                        "pm.test(\"Setup: Status code is 201\", function () {",
-                        "    pm.response.to.have.status(201);",
+                        "pm.test(\"Setup: Status code is 200\", function () {",
+                        "    pm.response.to.have.status(200);",
                         "});"
                     ],
                     "type": "text/javascript"
@@ -52,43 +56,61 @@ function resultHasTest(event) {
 }
 
 function processFolder(folder) {
+    // 1. Cleanup existing Setup items first (at this level)
+    folder.item = folder.item.filter(i => !i.name.startsWith("Setup Imposter"));
+
+    // If folder has sub-folders, recurse
+    // If folder has requests, process them
+
+    // Check if it has mixed content? Usually strict hierarchy.
+    // My generator created sub-folders.
+
+    // We will verify if items are requests or folders.
+    // If any item is a Folder, we assume this is a Container Folder and just recurse on folders.
+    // If items are Requests, we Apply the Setup Logic.
+
+    const hasSubFolders = folder.item.some(i => i.item);
+
+    if (hasSubFolders) {
+        folder.item.forEach(subItem => {
+            if (subItem.item) {
+                processFolder(subItem);
+            }
+        });
+        return;
+    }
+
+    // Process Requests Layer
     const newItems = [];
-    const imposterPort = 4545; // Default from collection variables usually
+    const imposterPort = 4545;
 
-    // 1. Initial Setup for the whole folder (for GET tests)
-    // We'll treat this folder as a "Suite"
+    // We already filtered startItems = folder.item (which are request items now)
+    const startItems = folder.item;
 
-    // We can group consecutive READ operations and put one Setup before them.
-    // We MUST put a Setup before EVERY destructive (DELETE) operation.
-
-    // Filter existing setup items if we run this script multiple times? 
-    // Ideally we assume clean slate from the previous generated state or we clean up names like "Setup Imposter..."
-
-    // Let's iterate original items
-    const startItems = folder.item.filter(i => !i.name.startsWith("Setup Imposter"));
-
-    // Setup for the initial block
+    // Always start with a Setup for this group/folder to ensure clean state
     newItems.push(createSetupItem(imposterPort));
 
     startItems.forEach(item => {
         const method = item.request ? item.request.method : "";
 
         if (method === "DELETE") {
-            // Destructive: Needs Setup BEFORE it (unless it's the very first item which we handled? No, always safer to setup before delete to ensure it exists)
-            // Actually, if we just did a Setup, we are good.
-            // If the PREVIOUS item was a DELETE, we definitely need a Setup.
-            // If the previous item was a GET, we *might* be good, but to be "proper", let's be explicit.
-
-            // Optimization: If the very last item added was a Setup, don't add another.
+            // Ensure Setup before DELETE
+            // Check if last item was Setup
             const lastItem = newItems[newItems.length - 1];
             if (!lastItem.name.startsWith("Setup Imposter")) {
                 newItems.push(createSetupItem(imposterPort));
             }
             newItems.push(item);
+
+            // Note: After DELETE, we destroyed it.
+            // If next item needs it, we need another Setup.
+            // The loop will handle next item.
         } else {
-            // Read-only (GET, etc): Just add it.
-            // But if the previous item was a DELETE, we need a Setup!
+            // Read-only (GET, etc)
+            // If previous was DELETE, we need Setup data.
             const lastItem = newItems[newItems.length - 1];
+            // If last item was DELETE, it definitely needs Setup.
+            // If last item was GET, it persists.
             if (lastItem.request && lastItem.request.method === "DELETE") {
                 newItems.push(createSetupItem(imposterPort));
             }
@@ -116,16 +138,8 @@ function main() {
             console.warn("Parameter Coverage Tests folder not found!");
         }
 
-        // Optional: Check other folders?
-        // "Imposters" and "Stubs" might need logic but they seem manually curated and likely sequential.
-        // User said "in each folder", suggesting maybe check others.
-        // Let's aggressively ensure 'Imposters' and 'Stubs' start with a Setup too if they don't?
-        // But 'Imposters' folder starts with 'Create Imposter' which IS a setup.
-        // 'Stubs' folder starts with 'Setup Imposter for Stubs'.
-        // So those are likely fine. The issue is my generated folder doing multiple DELETEs.
-
         fs.writeFileSync(filePath, JSON.stringify(collection, null, 4));
-        console.log("Successfully restructured Postman tests.");
+        console.log("Successfully restructured Postman tests recursively.");
     } catch (e) {
         console.error(e);
         process.exit(1);

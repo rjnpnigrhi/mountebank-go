@@ -925,50 +925,50 @@
             "name": "Parameter Coverage Tests",
             "item": [
                 {
-                    "name": "Setup Imposter 4545",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"port\": 4545,\n  \"protocol\": \"http\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/imposters",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "imposters"
-                            ]
-                        }
-                    },
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "pm.test(\"Setup: Status code is 201\", function () {",
-                                    "    pm.response.to.have.status(201);",
-                                    "});"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ]
-                },
-                {
                     "name": "GET All Imposters",
                     "item": [
+                        {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
                         {
                             "name": "GET All Imposters (replayable=true, removeProxies=true)",
                             "request": {
@@ -1195,6 +1195,48 @@
                     "name": "DELETE All Imposters",
                     "item": [
                         {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "DELETE All Imposters (replayable=true, removeProxies=true)",
                             "request": {
                                 "method": "DELETE",
@@ -1234,6 +1276,48 @@
                                             "pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 202]);",
                                             "});"
                                         ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
                                     }
                                 }
                             ]
@@ -1283,6 +1367,48 @@
                             ]
                         },
                         {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "DELETE All Imposters (replayable=false, removeProxies=true)",
                             "request": {
                                 "method": "DELETE",
@@ -1322,6 +1448,48 @@
                                             "pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 202]);",
                                             "});"
                                         ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
                                     }
                                 }
                             ]
@@ -1376,6 +1544,48 @@
                     "name": "GET Imposter",
                     "item": [
                         {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "GET Imposter (replayable=true, removeProxies=true)",
                             "request": {
                                 "method": "GET",
@@ -1419,7 +1629,7 @@
                                             "var jsonData = pm.response.json();",
                                             "pm.expect(jsonData).to.have.property('port');",
                                             "pm.expect(jsonData).to.have.property('protocol');",
-                                            "pm.expect(jsonData).to.have.property('_links');",
+                                            "pm.expect(jsonData).to.not.have.property('_links');",
                                             "});",
                                             "pm.test(\"Imposter has stubs\", function () {",
                                             "var jsonData = pm.response.json();",
@@ -1478,7 +1688,7 @@
                                             "var jsonData = pm.response.json();",
                                             "pm.expect(jsonData).to.have.property('port');",
                                             "pm.expect(jsonData).to.have.property('protocol');",
-                                            "pm.expect(jsonData).to.have.property('_links');",
+                                            "pm.expect(jsonData).to.not.have.property('_links');",
                                             "});",
                                             "pm.test(\"Imposter has stubs\", function () {",
                                             "var jsonData = pm.response.json();",
@@ -1625,6 +1835,48 @@
                     "name": "DELETE Imposter",
                     "item": [
                         {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "DELETE Imposter (replayable=true, removeProxies=true)",
                             "request": {
                                 "method": "DELETE",
@@ -1665,6 +1917,48 @@
                                             "pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 202]);",
                                             "});"
                                         ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
                                     }
                                 }
                             ]
@@ -1715,6 +2009,48 @@
                             ]
                         },
                         {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "DELETE Imposter (replayable=false, removeProxies=true)",
                             "request": {
                                 "method": "DELETE",
@@ -1755,6 +2091,48 @@
                                             "pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 202]);",
                                             "});"
                                         ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
                                     }
                                 }
                             ]
@@ -1809,6 +2187,48 @@
                 {
                     "name": "GET Logs",
                     "item": [
+                        {
+                            "name": "Setup Imposter 4545",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/imposters",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "imposters"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test(\"Setup: Status code is 200\", function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
                         {
                             "name": "Get Logs (Start Index Only)",
                             "request": {
