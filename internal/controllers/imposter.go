@@ -328,3 +328,37 @@ func (ic *ImposterController) getPortFromRequest(r *http.Request) (int, error) {
 
 	return port, nil
 }
+
+// PostRequest handles POST /imposters/:id/_requests
+func (ic *ImposterController) PostRequest(w http.ResponseWriter, r *http.Request) {
+	port, err := ic.getPortFromRequest(r)
+	if err != nil {
+		util.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	imposter, err := ic.repository.Get(port)
+	if err != nil {
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
+		return
+	}
+
+	var requestBody struct {
+		Request models.Request `json:"request"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// We pass empty details for now
+	response, err := imposter.GetResponseFor(&requestBody.Request, make(map[string]interface{}))
+	if err != nil {
+		util.WriteError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

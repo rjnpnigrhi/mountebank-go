@@ -157,6 +157,8 @@ func (s *Server) createRouter() http.Handler {
 	router.HandleFunc("/imposters/{id}/stubs/{stubIndex}", imposterController.DeleteStub).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/savedRequests", imposterController.ResetRequests).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/savedProxyResponses", imposterController.DeleteSavedProxyResponses).Methods("DELETE")
+	router.HandleFunc("/imposters/{id}/_requests", imposterController.PostRequest).Methods("POST")
+	// router.HandleFunc("/imposters/{id}/_requests/{proxyResolutionKey}", imposterController.PostProxyResponse).Methods("POST")
 	router.HandleFunc("/logs", logsController.Get).Methods("GET")
 
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
