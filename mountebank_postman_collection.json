@@ -2427,6 +2427,659 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "Missing APIs Coverage",
+            "item": [
+                {
+                    "name": "GET Config",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/config",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "config"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "logs"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET Logs (startIndex)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/logs?startIndex=0",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startIndex",
+                                    "value": "0"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GET Logs (endIndex)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/logs?endIndex=5",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "endIndex",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PUT Stubs (Overwrite All)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/stubs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"stubs\": [\n    {\n      \"responses\": [\n        {\n          \"is\": {\n            \"statusCode\": 201\n          }\n        }\n      ]\n    }\n  ]\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST Stub (Add New)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/stubs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"stub\": {\n    \"responses\": [\n      {\n        \"is\": {\n          \"statusCode\": 404\n        }\n      }\n    ]\n  }\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PUT Stub at Index 0",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/stubs/0",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs",
+                                "0"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"responses\": [\n    {\n      \"is\": {\n        \"statusCode\": 400\n      }\n    }\n  ]\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "DELETE Stub at Index 0",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/stubs/0",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "stubs",
+                                "0"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "DELETE Saved Proxy Responses",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/savedProxyResponses",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "savedProxyResponses"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "DELETE Saved Requests",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/savedRequests",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "savedRequests"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Setup Imposter 4545",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"port\": 4545,\n      \"protocol\": \"http\",\n      \"stubs\": [\n        {\n          \"responses\": [\n            {\n              \"is\": {\n                \"statusCode\": 200\n              }\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Setup: Status 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST _requests (Simulate)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/4545/_requests",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "4545",
+                                "_requests"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"request\": {\n    \"method\": \"GET\",\n    \"path\": \"/\",\n    \"query\": {},\n    \"headers\": {}\n  }\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function(){ pm.response.to.have.status(200); });"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }
