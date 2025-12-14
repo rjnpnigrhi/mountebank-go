@@ -43,8 +43,8 @@ type ImposterInfo struct {
 	Name             string         `json:"name,omitempty"`
 	NumberOfRequests *int           `json:"numberOfRequests,omitempty"`
 	RecordRequests   bool           `json:"recordRequests"`
-	Requests         *[]*Request    `json:"requests,omitempty"` // Changed to pointer to slice
-	Stubs            []Stub         `json:"stubs,omitempty"`
+	Requests         *[]*Request    `json:"requests,omitempty"`
+	Stubs            []Stub         `json:"stubs"`
 	Middleware       string         `json:"middleware,omitempty"`
 	DefaultResponse  *Response      `json:"defaultResponse,omitempty"`
 	AllowCORS        bool           `json:"allowCORS,omitempty"`
@@ -308,6 +308,7 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	if includeStubs {
 		allStubs := imp.stubs.GetAll()
 
+		// Initialize as empty slice to ensure [] instead of null/omitted in JSON
 		filteredStubs := make([]Stub, 0, len(allStubs))
 		for i, stub := range allStubs {
 			if removeProxies && stub.IsProxy {

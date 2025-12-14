@@ -109,8 +109,8 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 	replayable := r.URL.Query().Get("replayable") == "true"
 	removeProxies := r.URL.Query().Get("removeProxies") == "true"
 
-	// By default, list endpoint does not include stubs unless replayable is true
-	includeStubs := replayable
+	// By default, list endpoint does not include stubs unless replayable is true or removeProxies is true
+	includeStubs := replayable || removeProxies
 
 	// Check if client accepts HTML (browser)
 	if strings.Contains(r.Header.Get("Accept"), "text/html") {
@@ -197,12 +197,16 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": true,
-		"stubs":    true,
+		"stubs":    true, // Node.js creates with stubs included
 	}))
 }
 
 // Delete handles DELETE /imposters
 func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
+	// Node.js logic: replayable defaults to true unless explicitly false
+	replayable := r.URL.Query().Get("replayable") != "false"
+	removeProxies := r.URL.Query().Get("removeProxies") == "true"
+
 	imposters, err := ic.repository.DeleteAll()
 	if err != nil {
 		util.WriteError(w, err, http.StatusInternalServerError)
@@ -214,8 +218,17 @@ func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"requests": true,
-			"stubs":    false,
+			"replayable":    replayable,
+			"removeProxies": removeProxies,
+			"requests":      !replayable, // Node.js toJSON default (list=false) implies requests=false if replayable=true, but wait.
+			// Node DELETE: getAllJSON(options). getAllJSON calls toJSON(options).
+			// If replayable=true, toJSON removes non-essential (requests).
+			// If replayable=false, requests are added.
+			// But here we are just calling ToJSON with a map.
+			// Let's explicitly control requests based on replayable logic?
+			// Node toJSON: if !options.replayable { await addRequestsTo(result); }
+			// So if replayable=true, requests are FALSE.
+			"stubs": true, // Node.js includes stubs (list is false)
 		}))
 	}
 
@@ -285,9 +298,10 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	result := make(map[string]interface{})
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
+		// Node.js PUT returns list: true, so stubs are excluded
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
 			"requests": false,
-			"stubs":    true,
+			"stubs":    false,
 		}))
 	}
 

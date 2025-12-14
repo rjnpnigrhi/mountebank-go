@@ -48,7 +48,7 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 
 	options := map[string]interface{}{
 		"replayable":    replayable,
-		"requests":      true,
+		"requests":      !replayable,
 		"removeProxies": removeProxies,
 		"stubs":         true,
 	}
