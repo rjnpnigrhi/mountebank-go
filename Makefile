@@ -23,7 +23,7 @@ clean:
 
 # Run the server
 run: build
-	./mb start --port 2525 --loglevel info --host 0.0.0.0 --configfile ./mountebank-templates/imposters.ejs --allowInjection
+	./mb start --port 2525 --loglevel info --host 0.0.0.0 --allowInjection
 
 # Install dependencies
 deps:
