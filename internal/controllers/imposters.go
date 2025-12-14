@@ -142,7 +142,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 		})
 		if err != nil {
 			ic.logger.Errorf("Failed to render imposters: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			util.WriteError(w, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -172,7 +172,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	var config models.ImposterConfig
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -180,14 +180,14 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	imposter, err := ic.createImposter(&config)
 	if err != nil {
 		ic.logger.Errorf("Error creating imposter: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	// Add to repository
 	if err := ic.repository.Add(imposter); err != nil {
 		ic.logger.Errorf("Error adding imposter: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 	imposters, err := ic.repository.DeleteAll()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -230,7 +230,7 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	// Read body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -244,18 +244,18 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 			Imposters []models.ImposterConfig `json:"imposters"`
 		}
 		if err := json.Unmarshal(body, &wrappedRequest); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 			return
 		}
 		impostersConfig = wrappedRequest.Imposters
 	} else if strings.HasPrefix(trimmedBody, "[") {
 		// Raw array
 		if err := json.Unmarshal(body, &impostersConfig); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 			return
 		}
 	} else {
-		http.Error(w, "Invalid JSON: must be an object or an array", http.StatusBadRequest)
+		util.WriteError(w, util.NewValidationError("Invalid JSON: must be an object or an array", nil), http.StatusBadRequest)
 		return
 	}
 
@@ -268,13 +268,13 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 		imposter, err := ic.createImposter(&config)
 		if err != nil {
 			ic.logger.Errorf("Error creating imposter: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, err, http.StatusBadRequest)
 			return
 		}
 
 		if err := ic.repository.Add(imposter); err != nil {
 			ic.logger.Errorf("Error adding imposter: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, err, http.StatusBadRequest)
 			return
 		}
 

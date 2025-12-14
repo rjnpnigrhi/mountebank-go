@@ -41,8 +41,8 @@ type ImposterInfo struct {
 	Port             int            `json:"port"`
 	Protocol         string         `json:"protocol"`
 	Name             string         `json:"name,omitempty"`
-	NumberOfRequests int            `json:"numberOfRequests"`
-	RecordRequests   bool           `json:"recordRequests,omitempty"`
+	NumberOfRequests *int           `json:"numberOfRequests,omitempty"`
+	RecordRequests   bool           `json:"recordRequests"`
 	Requests         *[]*Request    `json:"requests,omitempty"` // Changed to pointer to slice
 	Stubs            []Stub         `json:"stubs,omitempty"`
 	Middleware       string         `json:"middleware,omitempty"`
@@ -264,19 +264,18 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	defer imp.mu.RUnlock()
 
 	info := &ImposterInfo{
-		Port:             imp.port,
-		Protocol:         imp.protocol,
-		Name:             imp.name,
-		NumberOfRequests: imp.numberOfRequests,
-		RecordRequests:   imp.recordRequests,
-		Middleware:       imp.middleware,
-		DefaultResponse:  imp.defaultResponse,
-		AllowCORS:        imp.allowCORS,
-		Key:              imp.key,
-		Cert:             imp.cert,
-		MutualAuth:       imp.mutualAuth,
-		Mode:             imp.mode,
-		Host:             imp.host,
+		Port:            imp.port,
+		Protocol:        imp.protocol,
+		Name:            imp.name,
+		RecordRequests:  imp.recordRequests,
+		Middleware:      imp.middleware,
+		DefaultResponse: imp.defaultResponse,
+		AllowCORS:       imp.allowCORS,
+		Key:             imp.key,
+		Cert:            imp.cert,
+		MutualAuth:      imp.mutualAuth,
+		Mode:            imp.mode,
+		Host:            imp.host,
 	}
 
 	// Include stubs if requested
@@ -300,6 +299,12 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		removeProxies = true
 	}
 
+	// set number of requests if not replayable
+	if !replayable {
+		val := imp.numberOfRequests
+		info.NumberOfRequests = &val
+	}
+
 	if includeStubs {
 		allStubs := imp.stubs.GetAll()
 
@@ -320,7 +325,7 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 				stubCopy := stub
 				stubCopy.Links = &StubLinks{
 					Self: &Link{
-						Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs/%d", imp.port, i),
+						Href: fmt.Sprintf("/imposters/%d/stubs/%d", imp.port, i),
 					},
 				}
 				filteredStubs = append(filteredStubs, stubCopy)
@@ -344,10 +349,10 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	if !replayable {
 		info.Links = &ImposterLinks{
 			Self: &Link{
-				Href: fmt.Sprintf("http://localhost:2525/imposters/%d", imp.port),
+				Href: fmt.Sprintf("/imposters/%d", imp.port),
 			},
 			Stubs: &Link{
-				Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs", imp.port),
+				Href: fmt.Sprintf("/imposters/%d/stubs", imp.port),
 			},
 		}
 	}

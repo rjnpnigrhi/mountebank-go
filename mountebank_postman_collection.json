@@ -1,0 +1,888 @@
+{
+    "info": {
+        "_postman_id": "b8a8c8e8-d6f7-4b8a-9c9d-1e1f1a1b1c1d",
+        "name": "Mountebank API (Local)",
+        "description": "Postman collection for testing Mountebank APIs based on docs/api/overview",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:2525",
+            "type": "string"
+        },
+        {
+            "key": "imposterPort",
+            "value": "4545",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Home",
+            "item": [
+                {
+                    "name": "Get Entry Hypermedia",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                ""
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Response has _links\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('_links');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Imposters",
+            "item": [
+                {
+                    "name": "Create Imposter",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"port\": {{imposterPort}},\n  \"protocol\": \"http\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "pm.test(\"Port matches\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.port).to.eql(parseInt(pm.variables.get(\"imposterPort\")));",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Dynamic Imposter",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"protocol\": \"http\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "pm.test(\"Port returned\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('port');",
+                                    "    pm.expect(jsonData.port).to.be.a('number');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Imposter",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}?replayable=false&removeProxies=false",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "replayable",
+                                    "value": "false",
+                                    "description": "Set to true to retrieve minimum info for replaying"
+                                },
+                                {
+                                    "key": "removeProxies",
+                                    "value": "false",
+                                    "description": "Set to true to remove proxy responses"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get All Imposters",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters?replayable=false&removeProxies=false",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ],
+                            "query": [
+                                {
+                                    "key": "replayable",
+                                    "value": "false",
+                                    "description": "Set to true to retrieve minimum info for replaying"
+                                },
+                                {
+                                    "key": "removeProxies",
+                                    "value": "false",
+                                    "description": "Set to true to remove proxy responses"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Check imposters array\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('imposters');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Overwrite All Imposters",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"imposters\": [\n    {\n      \"protocol\": \"http\",\n      \"port\": {{imposterPort}}\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Check imposters array\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.imposters).to.be.an('array');",
+                                    "    pm.expect(jsonData.imposters).to.have.lengthOf.at.least(1);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Saved Proxy Responses",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}/savedProxyResponses",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}",
+                                "savedProxyResponses"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Saved Requests",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}/savedRequests",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}",
+                                "savedRequests"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Imposter",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}?replayable=false&removeProxies=false",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "replayable",
+                                    "value": "false",
+                                    "description": "Set to true to retrieve minimum info for replaying"
+                                },
+                                {
+                                    "key": "removeProxies",
+                                    "value": "false",
+                                    "description": "Set to true to remove proxy responses"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete All Imposters",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters?replayable=false&removeProxies=false",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ],
+                            "query": [
+                                {
+                                    "key": "replayable",
+                                    "value": "false",
+                                    "description": "Set to true to retrieve minimum info for replaying"
+                                },
+                                {
+                                    "key": "removeProxies",
+                                    "value": "false",
+                                    "description": "Set to true to remove proxy responses"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Stubs",
+            "item": [
+                {
+                    "name": "Setup Imposter for Stubs",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"port\": {{imposterPort}},\n  \"protocol\": \"http\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add Stub",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"index\": 0,\n  \"stub\": {\n    \"responses\": [{\n      \"is\": {\n        \"body\": \"Hello, world!\"\n      }\n    }]\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}/stubs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}",
+                                "stubs"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Stub added\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.stubs).to.have.lengthOf.at.least(1);",
+                                    "    pm.expect(jsonData.stubs[0].responses[0].is.body).to.eql(\"Hello, world!\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Change Stub",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"responses\": [{\n    \"is\": {\n      \"body\": \"Goodbye, world!\"\n    }\n  }]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}/stubs/0",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}",
+                                "stubs",
+                                "0"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Stub updated\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.stubs[0].responses[0].is.body).to.eql(\"Goodbye, world!\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Overwrite All Stubs",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"stubs\": [{\n    \"responses\": [{\n      \"is\": { \"body\": \"New stub\" }\n    }]\n  }]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}/stubs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}",
+                                "stubs"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Stubs overwritten\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.stubs).to.have.lengthOf(1);",
+                                    "    pm.expect(jsonData.stubs[0].responses[0].is.body).to.eql(\"New stub\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Stub",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters/{{imposterPort}}/stubs/0",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters",
+                                "{{imposterPort}}",
+                                "stubs",
+                                "0"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Stub deleted\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.stubs).to.have.lengthOf(0);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "System",
+            "item": [
+                {
+                    "name": "Get Config",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/config",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "config"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Has version\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('version');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/logs?startIndex=&endIndex=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startIndex",
+                                    "value": "",
+                                    "description": "Start index for log entries"
+                                },
+                                {
+                                    "key": "endIndex",
+                                    "value": "",
+                                    "description": "End index for log entries"
+                                }
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Has logs array\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('logs');",
+                                    "    pm.expect(jsonData.logs).to.be.an('array');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Feed",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/xml"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/feed",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "feed"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Metrics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/metrics",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "metrics"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Showcase - JS Injection",
+            "item": [
+                {
+                    "name": "Create Injection Imposter",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"protocol\": \"http\",\n  \"port\": 4546,\n  \"stubs\": [{\n    \"predicates\": [{\n      \"inject\": \"function(config) { return config.request.path === '/injected'; }\"\n    }],\n    \"responses\": [{\n      \"is\": {\n        \"statusCode\": 200,\n        \"body\": \"Injected Match!\"\n      }\n    }]\n  }]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/imposters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "imposters"
+                            ]
+                        },
+                        "description": "Requires Mountebank to be started with --allowInjection"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Invoke Injection Imposter",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:4546/injected",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "4546",
+                            "path": [
+                                "injected"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "pm.test(\"Body matches injection\", function () {",
+                                    "    pm.expect(pm.response.text()).to.eql(\"Injected Match!\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
