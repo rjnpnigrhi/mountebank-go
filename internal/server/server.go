@@ -25,12 +25,12 @@ import (
 
 // Config represents server configuration
 type Config struct {
-	Port          int
-	Host          string
-	LogLevel      string
+	Port           int
+	Host           string
+	LogLevel       string
 	AllowInjection bool
-	IPWhitelist   []string
-	APIKey        string
+	IPWhitelist    []string
+	APIKey         string
 	LogFile        string
 	NoLogFile      bool
 	Datadir        string
@@ -137,9 +137,9 @@ func (s *Server) createRouter() http.Handler {
 	router.HandleFunc("/faqs", s.handleStaticView("faqs", "FAQs")).Methods("GET")
 	router.HandleFunc("/support", s.handleStaticView("support", "Support")).Methods("GET")
 	router.PathPrefix("/docs/").HandlerFunc(s.handleDocs)
-	
+
 	router.HandleFunc("/imposters", impostersController.Get).Methods("GET")
-	
+
 	// Add middleware
 	router.Use(s.loggingMiddleware)
 	router.Use(s.ipWhitelistMiddleware)
@@ -148,7 +148,7 @@ func (s *Server) createRouter() http.Handler {
 	router.HandleFunc("/imposters", impostersController.Post).Methods("POST")
 	router.HandleFunc("/imposters", impostersController.Delete).Methods("DELETE")
 	router.HandleFunc("/imposters", impostersController.Put).Methods("PUT")
-	
+
 	router.HandleFunc("/imposters/{id}", imposterController.Get).Methods("GET")
 	router.HandleFunc("/imposters/{id}", imposterController.Delete).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/stubs", imposterController.PutStubs).Methods("PUT")
@@ -158,7 +158,7 @@ func (s *Server) createRouter() http.Handler {
 	router.HandleFunc("/imposters/{id}/savedRequests", imposterController.ResetRequests).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/savedProxyResponses", imposterController.DeleteSavedProxyResponses).Methods("DELETE")
 	router.HandleFunc("/logs", logsController.Get).Methods("GET")
-	
+
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	router.HandleFunc("/config", s.handleConfig).Methods("GET")
 
@@ -203,10 +203,10 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 
 	// Remove leading slash
 	name := strings.TrimPrefix(path, "/")
-	
+
 	// Render template
 	err := s.renderer.Render(w, name, map[string]interface{}{
-		"port": s.config.Port,
+		"port":    s.config.Port,
 		"version": "2.9.3-go",
 		"notices": []interface{}{}, // TODO: notices
 	})
@@ -222,7 +222,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	// Check if client accepts HTML (browser)
 	if strings.Contains(r.Header.Get("Accept"), "text/html") {
 		err := s.renderer.Render(w, "index", map[string]interface{}{
-			"port": s.config.Port,
+			"port":    s.config.Port,
 			"version": "2.9.3-go",
 			"notices": []interface{}{}, // TODO: notices
 		})
@@ -241,15 +241,15 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 			"config": map[string]string{
 				"href": "/config",
 			},
-			"metrics": map[string]string{
-				"href": "/metrics",
+			"logs": map[string]string{
+				"href": "/logs",
 			},
 		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	
+
 	// Simple JSON response
 	json.NewEncoder(w).Encode(response)
 }
@@ -264,11 +264,11 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	config := map[string]interface{}{
 		"version": "2.9.3-go",
 		"options": map[string]interface{}{
-			"port":            s.config.Port,
-			"host":            s.config.Host,
-			"logLevel":        s.config.LogLevel,
-			"allowInjection":  s.config.AllowInjection,
-			"ipWhitelist":     s.config.IPWhitelist,
+			"port":           s.config.Port,
+			"host":           s.config.Host,
+			"logLevel":       s.config.LogLevel,
+			"allowInjection": s.config.AllowInjection,
+			"ipWhitelist":    s.config.IPWhitelist,
 		},
 		"process": map[string]interface{}{
 			"nodeVersion":  runtime.Version(), // Using Go version as nodeVersion for template compatibility
@@ -294,7 +294,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	
+
 	json.NewEncoder(w).Encode(config)
 }
 
@@ -347,11 +347,11 @@ func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	// Remove .html if present (though links usually don't have it)
 	path = strings.TrimSuffix(path, ".html")
-	
+
 	// Title is usually the last part of the path, capitalized
 	parts := strings.Split(path, "/")
 	title := parts[len(parts)-1]
-	
+
 	err := s.renderer.Render(w, path, map[string]interface{}{
 		"title": title,
 	})
@@ -522,7 +522,7 @@ func (s *Server) createHTTPImposter(config *models.ImposterConfig, logger *util.
 
 	// Create imposter with the server's close function
 	imposter = models.NewImposter(config, logger, s.config.AllowInjection, server.Close, saveFunc)
-	
+
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
 		config.Port = server.Port()
