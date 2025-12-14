@@ -56,12 +56,12 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 	// Check if client accepts HTML (browser)
 	if strings.Contains(r.Header.Get("Accept"), "text/html") {
 		info := imposter.ToJSON(options)
-		
+
 		// Convert struct to map for template access
 		var imposterMap map[string]interface{}
 		data, _ := json.Marshal(info)
 		json.Unmarshal(data, &imposterMap)
-		
+
 		err := ic.renderer.Render(w, "imposter", imposterMap)
 		if err != nil {
 			ic.logger.Errorf("Failed to render imposter: %v", err)
@@ -96,7 +96,7 @@ func (ic *ImposterController) Delete(w http.ResponseWriter, r *http.Request) {
 		"replayable":    replayable,
 		"requests":      true,
 		"removeProxies": removeProxies,
-		"stubs":         false, // Don't include stubs in delete response
+		"stubs":         true,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -135,7 +135,7 @@ func (ic *ImposterController) PutStubs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": false,
-		"stubs":    false,
+		"stubs":    true,
 	}))
 }
 
@@ -185,7 +185,7 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": false,
-		"stubs":    false,
+		"stubs":    true,
 	}))
 }
 
@@ -218,7 +218,7 @@ func (ic *ImposterController) DeleteStub(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": false,
-		"stubs":    false,
+		"stubs":    true,
 	}))
 }
 
@@ -257,7 +257,7 @@ func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": false,
-		"stubs":    false,
+		"stubs":    true,
 	}))
 }
 
@@ -317,7 +317,7 @@ func (ic *ImposterController) DeleteSavedProxyResponses(w http.ResponseWriter, r
 func (ic *ImposterController) getPortFromRequest(r *http.Request) (int, error) {
 	vars := mux.Vars(r)
 	portStr := vars["id"]
-	
+
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return 0, util.NewValidationError("invalid port", portStr)

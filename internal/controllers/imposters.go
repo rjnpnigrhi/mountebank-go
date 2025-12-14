@@ -58,7 +58,7 @@ func (ic *ImpostersController) createHTTPImposter(config *models.ImposterConfig,
 
 	// Create imposter with the server's close function
 	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close, saveFunc)
-	
+
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
 		config.Port = server.Port()
@@ -87,7 +87,7 @@ func (ic *ImpostersController) createHTTPSImposter(config *models.ImposterConfig
 
 	// Create imposter with the server's close function
 	imposter = models.NewImposter(config, logger, ic.allowInjection, server.Close, saveFunc)
-	
+
 	// Update port if it was auto-assigned
 	if config.Port == 0 {
 		config.Port = server.Port()
@@ -105,63 +105,62 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 		return imposters[i].Port() < imposters[j].Port()
 	})
 
+	// Parse query parameters
+	replayable := r.URL.Query().Get("replayable") == "true"
+	removeProxies := r.URL.Query().Get("removeProxies") == "true"
 
-	    // Parse query parameters
-    replayable := r.URL.Query().Get("replayable") == "true"
-    removeProxies := r.URL.Query().Get("removeProxies") == "true"
-    
-    // By default, list endpoint does not include stubs unless replayable is true
-    includeStubs := replayable
+	// By default, list endpoint does not include stubs unless replayable is true
+	includeStubs := replayable
 
-    // Check if client accepts HTML (browser)
-    if strings.Contains(r.Header.Get("Accept"), "text/html") {
-        // Convert to simple JSON for template
-        imposterList := make([]map[string]interface{}, 0, len(imposters))
-        for _, imposter := range imposters {
-            info := imposter.ToJSON(map[string]interface{}{
-                "replayable":    replayable,
-                "removeProxies": removeProxies,
-                "requests":      false,
+	// Check if client accepts HTML (browser)
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		// Convert to simple JSON for template
+		imposterList := make([]map[string]interface{}, 0, len(imposters))
+		for _, imposter := range imposters {
+			info := imposter.ToJSON(map[string]interface{}{
+				"replayable":    replayable,
+				"removeProxies": removeProxies,
+				"requests":      false,
 				"stubs":         includeStubs,
 				"debug":         ic.debug,
-            })
-            
-            // Convert struct to map for template access
-            var imposterMap map[string]interface{}
-            data, _ := json.Marshal(info)
-            json.Unmarshal(data, &imposterMap)
-            imposterList = append(imposterList, imposterMap)
-        }
+			})
 
-        ic.logger.Infof("Rendering imposters page with %d imposters", len(imposterList))
-        if len(imposterList) > 0 {
-            ic.logger.Infof("First imposter: %+v", imposterList[0])
-        }
+			// Convert struct to map for template access
+			var imposterMap map[string]interface{}
+			data, _ := json.Marshal(info)
+			json.Unmarshal(data, &imposterMap)
+			imposterList = append(imposterList, imposterMap)
+		}
 
-        err := ic.renderer.Render(w, "imposters", map[string]interface{}{
-            "imposters": imposterList,
-        })
-        if err != nil {
-            ic.logger.Errorf("Failed to render imposters: %v", err)
-            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-        }
-        return
-    }
+		ic.logger.Infof("Rendering imposters page with %d imposters", len(imposterList))
+		if len(imposterList) > 0 {
+			ic.logger.Infof("First imposter: %+v", imposterList[0])
+		}
 
-    // Convert to JSON format
-    result := make(map[string]interface{})
-    result["imposters"] = make([]interface{}, 0)
+		err := ic.renderer.Render(w, "imposters", map[string]interface{}{
+			"imposters": imposterList,
+		})
+		if err != nil {
+			ic.logger.Errorf("Failed to render imposters: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
 
-    imposterList := make([]interface{}, 0, len(imposters))
-    for _, imposter := range imposters {
-        imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-            "replayable":    replayable,
-            "removeProxies": removeProxies,
-            "requests":      false,
-            "stubs":         includeStubs,
-            "debug":         ic.debug,
-        }))
-    }
+	// Convert to JSON format
+	result := make(map[string]interface{})
+	result["imposters"] = make([]interface{}, 0)
+
+	imposterList := make([]interface{}, 0, len(imposters))
+	for _, imposter := range imposters {
+		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
+			"replayable":    replayable,
+			"removeProxies": removeProxies,
+			"requests":      false,
+			"stubs":         includeStubs,
+			"debug":         ic.debug,
+		}))
+	}
 
 	result["imposters"] = imposterList
 
@@ -198,7 +197,7 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": true,
-		"stubs":    false,
+		"stubs":    true,
 	}))
 }
 
@@ -288,7 +287,7 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
 			"requests": false,
-			"stubs":    false,
+			"stubs":    true,
 		}))
 	}
 
@@ -320,5 +319,3 @@ func (ic *ImpostersController) createImposter(config *models.ImposterConfig) (*m
 		return nil, util.NewProtocolError("unknown protocol", config.Protocol, nil)
 	}
 }
-
-

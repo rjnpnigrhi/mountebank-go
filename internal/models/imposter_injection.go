@@ -15,8 +15,36 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 	vm.SetFieldNameMapper(goja.TagFieldNameMapper("json", true))
 
 	// Set request
-	reqVal := vm.ToValue(request)
-	vm.Set("request", reqVal)
+	// We need to handle the case where Body is an object (map[string]interface{})
+	// but the injection script expects a string (to call JSON.parse).
+	// So we create a custom map for the request, and strict-stringify the body if it's an object.
+	reqMap := make(map[string]interface{})
+	
+	// Convert Struct to Map first to get all fields
+	tmpBytes, _ := json.Marshal(request)
+	json.Unmarshal(tmpBytes, &reqMap)
+
+	// Custom Body handling
+	if request.Body != nil {
+		switch v := request.Body.(type) {
+		case map[string]interface{}, []interface{}, []map[string]interface{}:
+			// It's a structured object/array. Convert to JSON string.
+			bodyBytes, err := json.Marshal(v)
+			if err == nil {
+				reqMap["body"] = string(bodyBytes)
+			}
+		}
+	}
+
+	// Ensure body is present (default to empty string if nil/missing) to avoid undefined in JS
+	if _, ok := reqMap["body"]; !ok {
+		reqMap["body"] = ""
+	}
+
+	// Add 'Body' alias to support scripts using request.Body (deprecated but used in templates)
+	reqMap["Body"] = reqMap["body"]
+
+	vm.Set("request", reqMap)
 
 	// Set logger
 	logObj := vm.NewObject()

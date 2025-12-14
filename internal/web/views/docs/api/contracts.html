@@ -19,33 +19,25 @@
 </p>
 
 <div class='contract' id='specification'>
-  <div id='home-specification' style='display:none'>{{ template "docs/api/contracts/home" . }}</div>
-  <div id='imposters-specification' style='display:none'>{{ template "docs/api/contracts/imposters" . }}</div>
-  <div id='imposter-specification' style='display:none'>{{ template "docs/api/contracts/imposter" . }}</div>
-  <div id='addStub-specification' style='display:none'>{{ template "docs/api/contracts/addStub" . }}</div>
-  <div id='stub-specification' style='display:none'>{{ template "docs/api/contracts/stub" . }}</div>
-  <div id='stubs-specification' style='display:none'>{{ template "docs/api/contracts/stubs" . }}</div>
-  <div id='config-specification' style='display:none'>{{ template "docs/api/contracts/config" . }}</div>
-  <div id='logs-specification' style='display:none'>{{ template "docs/api/contracts/logs" . }}</div>
+  {{ template "docs/api/contracts/home.html" . }}
+  {{ template "docs/api/contracts/imposters.html" . }}
+  {{ template "docs/api/contracts/imposter.html" . }}
+  {{ template "docs/api/contracts/addStub.html" . }}
+  {{ template "docs/api/contracts/stub.html" . }}
+  {{ template "docs/api/contracts/stubs.html" . }}
+  {{ template "docs/api/contracts/config.html" . }}
+  {{ template "docs/api/contracts/logs.html" . }}
 </div>
 
 <div class='contract' id='specification-description'>
-  <div id='home-specification-description' style='display:none'>{{ template "docs/api/contracts/home-description" . }}
-  </div>
-  <div id='imposters-specification-description' style='display:none'>{{ template
-    "docs/api/contracts/imposters-description" . }}</div>
-  <div id='imposter-specification-description' style='display:none'>{{ template
-    "docs/api/contracts/imposter-description" . }}</div>
-  <div id='addStub-specification-description' style='display:none'>{{ template "docs/api/contracts/addStub-description"
-    . }}</div>
-  <div id='stub-specification-description' style='display:none'>{{ template "docs/api/contracts/stub-description" . }}
-  </div>
-  <div id='stubs-specification-description' style='display:none'>{{ template "docs/api/contracts/stubs-description" . }}
-  </div>
-  <div id='config-specification-description' style='display:none'>{{ template "docs/api/contracts/config-description" .
-    }}</div>
-  <div id='logs-specification-description' style='display:none'>{{ template "docs/api/contracts/logs-description" . }}
-  </div>
+  {{ template "docs/api/contracts/home-description.html" . }}
+  {{ template "docs/api/contracts/imposters-description.html" . }}
+  {{ template "docs/api/contracts/imposter-description.html" . }}
+  {{ template "docs/api/contracts/addStub-description.html" . }}
+  {{ template "docs/api/contracts/stub-description.html" . }}
+  {{ template "docs/api/contracts/stubs-description.html" . }}
+  {{ template "docs/api/contracts/config-description.html" . }}
+  {{ template "docs/api/contracts/logs-description.html" . }}
 </div>
 
 
