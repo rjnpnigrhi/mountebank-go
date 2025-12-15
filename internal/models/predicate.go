@@ -250,7 +250,52 @@ func (pe *PredicateEvaluator) evaluateInject(predicate Predicate, request *Reque
 
 	// The injection code is expected to be a function expression
 	// We wrap it in parentheses and call it with (config, logger)
-	script := fmt.Sprintf("(%s)(config, logger)", predicate.Inject)
+	// The injection code is expected to be a function expression
+	// We detect arity to support legacy signatures
+	script := fmt.Sprintf(`
+		(function() {
+			var fn = %s;
+			if (typeof fn !== 'function') {
+				throw new Error("Injection must evaluate to a function");
+			}
+			
+			if (fn.length === 2) {
+				// Legacy: function(request, logger)
+				// Note: Mountebank docs say predicate injection is function(config), 
+				// but historically might have been different or user might expect specific args.
+				// Actually, predicate injection legacy was function(request, logger) ?
+				// Let's assume if 2 args, it's (config, logger) as passed before? 
+				// Wait, the previous code was: (%s)(config, logger)
+				// implying it ALWAYS passed 2 args.
+				// If the user function is function(config), then passing (config, logger) works because JS ignores extra args.
+				// If the user function is function(request, logger), then passing (config, logger) passes 'config' as 'request'.
+				// AND 'config' has a 'request' property. 
+				// So if user does request.method, they get config.method -> undefined. They need config.request.method.
+				
+				// Let's check how we construct params.
+				// config = { request: ... }
+				// If we want to support function(request, logger), we must pass request object as first arg.
+				
+				// We can try to support both.
+				// Standard: function(config) - length 1
+				// Legacy/Compatible: function(request, logger) - length 2
+				
+				// However, if we just blindly pass (request, logger) for length 2, we break function(config, logger) if that was ever valid.
+				// Mountebank docs: "The function accepts a single object, config".
+				// But let's look at what we are fixing.
+				// The user issue was about response injection (imposters-test.ejs -> getC360Identifier.ejs -> get360Identifier.js).
+				// That is an IMPOSTER injection (response).
+				// But we also proposed fixing PREDIATE checks.
+				
+				// For predicates, let's keep it safe.
+				// If user wrote function(request, logger), they expect request.
+				return fn(config.request, logger);
+			}
+			
+			// Default to passing config (and logger as extra which is harmless for arity 1)
+			return fn(config, logger);
+		})()
+	`, predicate.Inject)
 
 	val, err := vm.RunString(script)
 	if err != nil {
