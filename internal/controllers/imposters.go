@@ -156,7 +156,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
 			"replayable":    replayable,
 			"removeProxies": removeProxies,
-			"requests":      false,
+			"requests":      true,
 			"stubs":         includeStubs,
 			"debug":         ic.debug,
 		}))
