@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"net"
 	"net/http"
@@ -393,23 +395,62 @@ func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// responseWriter wraps http.ResponseWriter to capture status and body
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+	body   *bytes.Buffer
+}
+
+func (rw *responseWriter) WriteHeader(status int) {
+	rw.status = status
+	rw.ResponseWriter.WriteHeader(status)
+}
+
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	rw.body.Write(b)
+	return rw.ResponseWriter.Write(b)
+}
+
 // loggingMiddleware logs request duration
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
-		duration := time.Since(start)
 
 		// Filter out UI pages and static assets
 		if strings.Contains(r.Header.Get("Accept"), "text/html") ||
 			strings.HasPrefix(r.URL.Path, "/images/") ||
 			strings.HasPrefix(r.URL.Path, "/scripts/") ||
 			strings.HasPrefix(r.URL.Path, "/stylesheets/") ||
+			r.URL.Path == "/dist/" ||
 			r.URL.Path == "/favicon.ico" {
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		msg := fmt.Sprintf("[ADMIN] %s %s took %v", r.Method, r.URL.String(), duration)
+		correlationID := util.GenerateUUID()
+
+		// Log Request
+		bodyBytes, _ := io.ReadAll(r.Body)
+		r.Body.Close()
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		s.logger.Infof("[ADMIN] Request | CorrelationID: %s | Method: %s | URL: %s | Size: %d | Headers: %v | Body: %s",
+			correlationID, r.Method, r.URL.String(), len(bodyBytes), r.Header, string(bodyBytes))
+
+		// Wrap response writer
+		rw := &responseWriter{
+			ResponseWriter: w,
+			status:         200,
+			body:           &bytes.Buffer{},
+		}
+
+		next.ServeHTTP(rw, r)
+		duration := time.Since(start)
+
+		msg := fmt.Sprintf("[ADMIN] Response | CorrelationID: %s | Status: %d | Time: %v | Size: %d | Headers: %v | Body: %s",
+			correlationID, rw.status, duration, rw.body.Len(), rw.Header(), rw.body.String())
+
 		if duration > 100*time.Millisecond {
 			msg += " (SLOW)"
 		}

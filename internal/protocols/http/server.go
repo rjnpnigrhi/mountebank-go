@@ -107,6 +107,11 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	correlationID := util.GenerateUUID()
+	reqBodyStr := fmt.Sprintf("%v", request.Body)
+	s.logger.Infof("[IMPOSTER:%d] Request | CorrelationID: %s | Method: %s | Path: %s | Size: %d | Headers: %v | Body: %v",
+		s.port, correlationID, request.Method, request.Path, len(reqBodyStr), request.Headers, request.Body)
+
 	// Get response from imposter
 	response, err := s.getResponse(request, nil)
 	if err != nil {
@@ -131,6 +136,15 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	// Log Response
+	statusCode := response.StatusCode
+	if statusCode == 0 {
+		statusCode = 200
+	}
+	respBodyStr := fmt.Sprintf("%v", response.Body)
+	s.logger.Infof("[IMPOSTER:%d] Response | CorrelationID: %s | Status: %d | Size: %d | Headers: %v | Body: %v",
+		s.port, correlationID, statusCode, len(respBodyStr), response.Headers, response.Body)
 
 	// Check if blocked
 	if response.Blocked {
