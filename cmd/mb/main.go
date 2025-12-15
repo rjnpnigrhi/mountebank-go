@@ -205,6 +205,7 @@ func runStart(cmd *cobra.Command, args []string) {
 		NoParse:        noParse,
 		LogConfig:      logConfig,
 		ImpostersRepo:  impostersRepo,
+		PidFile:        pidFile,
 	}
 
 	srv, err := server.New(serverConfig)
@@ -225,14 +226,14 @@ func runStart(cmd *cobra.Command, args []string) {
 	go func() {
 		<-sigChan
 		fmt.Println("\nShutting down...")
-		
+
 		if err := srv.Stop(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error stopping server: %v\n", err)
 		}
 
 		// Remove PID file
 		os.Remove(pidFile)
-		
+
 		os.Exit(0)
 	}()
 
@@ -321,7 +322,7 @@ func runSave(cmd *cobra.Command, args []string) {
 	// We need to unmarshal into a temporary struct because the API response might have extra fields
 	// or slightly different structure than what we want to save?
 	// Actually, config.Config matches the expected structure.
-	
+
 	// Let's just write the body to file for now as it's the simplest way to "save" what the server gave us
 	// But wait, config.Save takes []models.ImposterConfig.
 	// So we should decode and then save.
@@ -345,12 +346,12 @@ func runReplay(cmd *cobra.Command, args []string) {
 	// But if the server is already running, we might want to just post the imposters?
 	// The JS version of replay seems to just start the server with the config.
 	// "mb replay" restarts the server with the saved config.
-	
+
 	// For now, we'll just treat it as start with config file
 	if configFile == "" {
 		fmt.Fprintln(os.Stderr, "Error: --configfile is required for replay")
 		os.Exit(1)
 	}
-	
+
 	runStart(cmd, args)
 }

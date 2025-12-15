@@ -19,7 +19,7 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 	// but the injection script expects a string (to call JSON.parse).
 	// So we create a custom map for the request, and strict-stringify the body if it's an object.
 	reqMap := make(map[string]interface{})
-	
+
 	// Convert Struct to Map first to get all fields
 	tmpBytes, _ := json.Marshal(request)
 	json.Unmarshal(tmpBytes, &reqMap)
@@ -156,10 +156,40 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 	vm.Set("console", consoleObj)
 
 	// Wrap in a function call
+	// Create JS-compatible logger map
+	jsLogger := map[string]interface{}{
+		"debug": func(msg string) { imp.logger.Debug(msg) },
+		"info":  func(msg string) { imp.logger.Info(msg) },
+		"warn":  func(msg string) { imp.logger.Warn(msg) },
+		"error": func(msg string) { imp.logger.Error(msg) },
+	}
+
+	// Prepare config object
+	config := map[string]interface{}{
+		"request": reqMap,
+		"state":   imp.state,
+		"logger":  jsLogger,
+	}
+
+	vm.Set("config", config)
+	vm.Set("request", reqMap)
+	vm.Set("state", imp.state)
+	vm.Set("logger", logObj) // Keep global logger for backward compatibility if needed
+
+	// Wrap in a function call
+	// We pass 'config' as the first argument to support the standard signature function(config)
+	// We also pass request, state, logger for legacy signature function(request, state, logger)
+	// Note: If the function is defined as function(config), it gets config.
+	// If it is function(request, state, logger), it gets config as the first arg, which might be an issue?
+	// Mountebank Node.js inspects function arguments to decide?
+	// Actually, Mountebank Node.js passes (config) and relies on users using function(config).
+	// Older versions passed (request, response, logger).
+	// But let's assume complex_imposter_collection uses function(config).
+
 	script := fmt.Sprintf(`
 		(function() {
 			var fn = %s;
-			return fn(request, state, logger);
+			return fn(config, state, logger);
 		})()
 	`, injectFunction)
 

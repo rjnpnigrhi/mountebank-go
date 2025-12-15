@@ -32,13 +32,13 @@ func NewImposterController(repository *models.ImposterRepository, logger *util.L
 func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 
 	options := map[string]interface{}{
 		"replayable":    replayable,
-		"requests":      true,
+		"requests":      !replayable,
 		"removeProxies": removeProxies,
 		"stubs":         true,
 	}
@@ -65,7 +65,7 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 		err := ic.renderer.Render(w, "imposter", imposterMap)
 		if err != nil {
 			ic.logger.Errorf("Failed to render imposter: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			util.WriteError(w, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -78,13 +78,16 @@ func (ic *ImposterController) Get(w http.ResponseWriter, r *http.Request) {
 func (ic *ImposterController) Delete(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Delete(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		// Node.js returns {} and 200 OK if imposter not found
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
 		return
 	}
 
@@ -107,13 +110,13 @@ func (ic *ImposterController) Delete(w http.ResponseWriter, r *http.Request) {
 func (ic *ImposterController) PutStubs(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
@@ -122,19 +125,19 @@ func (ic *ImposterController) PutStubs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 		return
 	}
 
 	// Replace all stubs
 	if err := imposter.Stubs().ReplaceAll(request.Stubs); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"requests": false,
+		"requests": true,
 		"stubs":    true,
 	}))
 }
@@ -143,13 +146,13 @@ func (ic *ImposterController) PutStubs(w http.ResponseWriter, r *http.Request) {
 func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
@@ -157,7 +160,7 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 		Stub models.Stub `json:"stub"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 		return
 	}
 	stub := request.Stub
@@ -167,24 +170,24 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 	if indexStr != "" {
 		index, err := strconv.Atoi(indexStr)
 		if err != nil {
-			http.Error(w, "invalid index", http.StatusBadRequest)
+			util.WriteError(w, util.NewValidationError("invalid index", indexStr), http.StatusBadRequest)
 			return
 		}
 
 		if err := imposter.Stubs().InsertAtIndex(stub, index); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, err, http.StatusBadRequest)
 			return
 		}
 	} else {
 		if err := imposter.Stubs().Add(stub); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, err, http.StatusBadRequest)
 			return
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"requests": false,
+		"requests": true,
 		"stubs":    true,
 	}))
 }
@@ -193,31 +196,31 @@ func (ic *ImposterController) PostStub(w http.ResponseWriter, r *http.Request) {
 func (ic *ImposterController) DeleteStub(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
 	vars := mux.Vars(r)
 	stubIndex, err := strconv.Atoi(vars["stubIndex"])
 	if err != nil {
-		http.Error(w, "invalid stub index", http.StatusBadRequest)
+		util.WriteError(w, util.NewValidationError("invalid stub index", vars["stubIndex"]), http.StatusBadRequest)
 		return
 	}
 
 	if err := imposter.Stubs().DeleteAtIndex(stubIndex); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"requests": false,
+		"requests": true,
 		"stubs":    true,
 	}))
 }
@@ -226,37 +229,37 @@ func (ic *ImposterController) DeleteStub(w http.ResponseWriter, r *http.Request)
 func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
 	vars := mux.Vars(r)
 	stubIndex, err := strconv.Atoi(vars["stubIndex"])
 	if err != nil {
-		http.Error(w, "invalid stub index", http.StatusBadRequest)
+		util.WriteError(w, util.NewValidationError("invalid stub index", vars["stubIndex"]), http.StatusBadRequest)
 		return
 	}
 
 	var stub models.Stub
 	if err := json.NewDecoder(r.Body).Decode(&stub); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 		return
 	}
 
 	if err := imposter.Stubs().ReplaceAtIndex(stub, stubIndex); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"requests": false,
+		"requests": true,
 		"stubs":    true,
 	}))
 }
@@ -265,25 +268,25 @@ func (ic *ImposterController) PutStub(w http.ResponseWriter, r *http.Request) {
 func (ic *ImposterController) ResetRequests(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
 	if err := imposter.ResetRequests(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"requests": false,
-		"stubs":    false,
+		"requests": true,
+		"stubs":    true,
 	}))
 }
 
@@ -291,25 +294,25 @@ func (ic *ImposterController) ResetRequests(w http.ResponseWriter, r *http.Reque
 func (ic *ImposterController) DeleteSavedProxyResponses(w http.ResponseWriter, r *http.Request) {
 	port, err := ic.getPortFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	imposter, err := ic.repository.Get(port)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
 		return
 	}
 
 	if err := imposter.DeleteSavedProxyResponses(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
-		"requests": false,
-		"stubs":    false,
+		"requests": true,
+		"stubs":    true,
 	}))
 }
 
@@ -324,4 +327,38 @@ func (ic *ImposterController) getPortFromRequest(r *http.Request) (int, error) {
 	}
 
 	return port, nil
+}
+
+// PostRequest handles POST /imposters/:id/_requests
+func (ic *ImposterController) PostRequest(w http.ResponseWriter, r *http.Request) {
+	port, err := ic.getPortFromRequest(r)
+	if err != nil {
+		util.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	imposter, err := ic.repository.Get(port)
+	if err != nil {
+		util.WriteError(w, util.NewMissingResourceError(err.Error(), port), http.StatusNotFound)
+		return
+	}
+
+	var requestBody struct {
+		Request models.Request `json:"request"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// We pass empty details for now
+	response, err := imposter.GetResponseFor(&requestBody.Request, make(map[string]interface{}))
+	if err != nil {
+		util.WriteError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

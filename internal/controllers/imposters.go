@@ -109,8 +109,8 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 	replayable := r.URL.Query().Get("replayable") == "true"
 	removeProxies := r.URL.Query().Get("removeProxies") == "true"
 
-	// By default, list endpoint does not include stubs unless replayable is true
-	includeStubs := replayable
+	// By default, list endpoint does not include stubs unless replayable is true or removeProxies is true
+	includeStubs := replayable || removeProxies
 
 	// Check if client accepts HTML (browser)
 	if strings.Contains(r.Header.Get("Accept"), "text/html") {
@@ -142,7 +142,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 		})
 		if err != nil {
 			ic.logger.Errorf("Failed to render imposters: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			util.WriteError(w, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -156,7 +156,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
 			"replayable":    replayable,
 			"removeProxies": removeProxies,
-			"requests":      false,
+			"requests":      true,
 			"stubs":         includeStubs,
 			"debug":         ic.debug,
 		}))
@@ -172,7 +172,7 @@ func (ic *ImpostersController) Get(w http.ResponseWriter, r *http.Request) {
 func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	var config models.ImposterConfig
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -180,14 +180,14 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	imposter, err := ic.createImposter(&config)
 	if err != nil {
 		ic.logger.Errorf("Error creating imposter: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	// Add to repository
 	if err := ic.repository.Add(imposter); err != nil {
 		ic.logger.Errorf("Error adding imposter: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -197,15 +197,19 @@ func (ic *ImpostersController) Post(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(imposter.ToJSON(map[string]interface{}{
 		"requests": true,
-		"stubs":    true,
+		"stubs":    true, // Node.js creates with stubs included
 	}))
 }
 
 // Delete handles DELETE /imposters
 func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
+	// Node.js logic: replayable defaults to true unless explicitly false
+	replayable := r.URL.Query().Get("replayable") != "false"
+	removeProxies := r.URL.Query().Get("removeProxies") == "true"
+
 	imposters, err := ic.repository.DeleteAll()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -214,8 +218,17 @@ func (ic *ImpostersController) Delete(w http.ResponseWriter, r *http.Request) {
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
-			"requests": true,
-			"stubs":    false,
+			"replayable":    replayable,
+			"removeProxies": removeProxies,
+			"requests":      !replayable, // Node.js toJSON default (list=false) implies requests=false if replayable=true, but wait.
+			// Node DELETE: getAllJSON(options). getAllJSON calls toJSON(options).
+			// If replayable=true, toJSON removes non-essential (requests).
+			// If replayable=false, requests are added.
+			// But here we are just calling ToJSON with a map.
+			// Let's explicitly control requests based on replayable logic?
+			// Node toJSON: if !options.replayable { await addRequestsTo(result); }
+			// So if replayable=true, requests are FALSE.
+			"stubs": true, // Node.js includes stubs (list is false)
 		}))
 	}
 
@@ -230,7 +243,7 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	// Read body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -244,18 +257,18 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 			Imposters []models.ImposterConfig `json:"imposters"`
 		}
 		if err := json.Unmarshal(body, &wrappedRequest); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 			return
 		}
 		impostersConfig = wrappedRequest.Imposters
 	} else if strings.HasPrefix(trimmedBody, "[") {
 		// Raw array
 		if err := json.Unmarshal(body, &impostersConfig); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, util.NewInvalidJSONError(err.Error()), http.StatusBadRequest)
 			return
 		}
 	} else {
-		http.Error(w, "Invalid JSON: must be an object or an array", http.StatusBadRequest)
+		util.WriteError(w, util.NewValidationError("Invalid JSON: must be an object or an array", nil), http.StatusBadRequest)
 		return
 	}
 
@@ -268,13 +281,13 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 		imposter, err := ic.createImposter(&config)
 		if err != nil {
 			ic.logger.Errorf("Error creating imposter: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, err, http.StatusBadRequest)
 			return
 		}
 
 		if err := ic.repository.Add(imposter); err != nil {
 			ic.logger.Errorf("Error adding imposter: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			util.WriteError(w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -285,9 +298,10 @@ func (ic *ImpostersController) Put(w http.ResponseWriter, r *http.Request) {
 	result := make(map[string]interface{})
 	imposterList := make([]interface{}, 0, len(imposters))
 	for _, imposter := range imposters {
+		// Node.js PUT returns list: true, so stubs are excluded
 		imposterList = append(imposterList, imposter.ToJSON(map[string]interface{}{
 			"requests": false,
-			"stubs":    true,
+			"stubs":    false,
 		}))
 	}
 

@@ -32,7 +32,7 @@ func NewBehaviorExecutor(logger *util.Logger, state map[string]interface{}, allo
 // Execute executes all behaviors on a response
 func (be *BehaviorExecutor) Execute(request *Request, response *Response, behaviors []Behavior) (*Response, error) {
 	result := response
-	
+
 	for _, behavior := range behaviors {
 		var err error
 		result, err = be.executeBehavior(request, result, behavior)
@@ -40,7 +40,7 @@ func (be *BehaviorExecutor) Execute(request *Request, response *Response, behavi
 			return nil, err
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -49,23 +49,23 @@ func (be *BehaviorExecutor) executeBehavior(request *Request, response *Response
 	if behavior.Wait != nil {
 		return be.executeWait(response, behavior.Wait)
 	}
-	
+
 	if behavior.Decorate != "" {
 		return be.executeDecorate(request, response, behavior.Decorate)
 	}
-	
+
 	if behavior.Copy != nil {
 		return be.executeCopy(request, response, behavior.Copy)
 	}
-	
+
 	if behavior.Lookup != nil {
 		return be.executeLookup(request, response, behavior.Lookup)
 	}
-	
+
 	if behavior.ShellTransform != "" {
 		return be.executeShellTransform(request, response, behavior.ShellTransform)
 	}
-	
+
 	return response, nil
 }
 
@@ -124,10 +124,16 @@ func (be *BehaviorExecutor) executeDecorate(request *Request, response *Response
 		}
 	}
 
-	// If no return value, use the modified config.response
+	// If no return value, check if config.response was modified in the VM
+	// We must re-export config from the VM to get changes made in JS
 	if newResponseMap == nil {
-		if respObj, ok := config["response"].(map[string]interface{}); ok {
-			newResponseMap = respObj
+		configVal := vm.Get("config")
+		if configVal != nil {
+			if exportedConfig, ok := configVal.Export().(map[string]interface{}); ok {
+				if respObj, ok := exportedConfig["response"].(map[string]interface{}); ok {
+					newResponseMap = respObj
+				}
+			}
 		}
 	}
 

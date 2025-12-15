@@ -42,6 +42,7 @@ type Config struct {
 	NoParse        bool
 	LogConfig      string
 	ImpostersRepo  string
+	PidFile        string
 }
 
 // Server represents the mountebank server
@@ -157,6 +158,8 @@ func (s *Server) createRouter() http.Handler {
 	router.HandleFunc("/imposters/{id}/stubs/{stubIndex}", imposterController.DeleteStub).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/savedRequests", imposterController.ResetRequests).Methods("DELETE")
 	router.HandleFunc("/imposters/{id}/savedProxyResponses", imposterController.DeleteSavedProxyResponses).Methods("DELETE")
+	router.HandleFunc("/imposters/{id}/_requests", imposterController.PostRequest).Methods("POST")
+	// router.HandleFunc("/imposters/{id}/_requests/{proxyResolutionKey}", imposterController.PostProxyResponse).Methods("POST")
 	router.HandleFunc("/logs", logsController.Get).Methods("GET")
 
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
@@ -248,6 +251,10 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Vary", "Accept")
+	w.Header().Set("Keep-Alive", "timeout=5") // Node default often sends this with Connection: Keep-Alive
+
 	w.WriteHeader(http.StatusOK)
 
 	// Simple JSON response
@@ -264,11 +271,36 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	config := map[string]interface{}{
 		"version": "2.9.3-go",
 		"options": map[string]interface{}{
-			"port":           s.config.Port,
-			"host":           s.config.Host,
-			"logLevel":       s.config.LogLevel,
-			"allowInjection": s.config.AllowInjection,
-			"ipWhitelist":    s.config.IPWhitelist,
+			"port":                s.config.Port,
+			"host":                s.config.Host,
+			"logLevel":            s.config.LogLevel,
+			"allowInjection":      s.config.AllowInjection,
+			"noParse":             s.config.NoParse,
+			"formatter":           s.config.Formatter,
+			"localOnly":           s.config.LocalOnly,
+			"pidfile":             s.config.PidFile,
+			"debug":               s.config.Debug,
+			"apikey":              s.config.APIKey,
+			"impostersRepository": s.config.ImpostersRepo,
+			"logfile":             s.config.LogFile,
+			"nologfile":           s.config.NoLogFile,
+			"protofile":           s.config.ProtoFile,
+			"log": map[string]interface{}{
+				"level": s.config.LogLevel,
+				"transports": map[string]interface{}{
+					"file": map[string]interface{}{
+						"path":   s.config.LogFile,
+						"format": "json",
+					},
+					"console": map[string]interface{}{
+						"colorize": true,
+						"format":   "json",
+					},
+				},
+			},
+			"origin":      s.config.Origin,
+			"datadir":     s.config.Datadir,
+			"ipWhitelist": s.config.IPWhitelist,
 		},
 		"process": map[string]interface{}{
 			"nodeVersion":  runtime.Version(), // Using Go version as nodeVersion for template compatibility

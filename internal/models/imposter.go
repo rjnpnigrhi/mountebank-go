@@ -38,28 +38,22 @@ type Imposter struct {
 
 // ImposterInfo contains information about an imposter
 type ImposterInfo struct {
-	Port             int            `json:"port"`
-	Protocol         string         `json:"protocol"`
-	Name             string         `json:"name,omitempty"`
-	NumberOfRequests int            `json:"numberOfRequests"`
-	RecordRequests   bool           `json:"recordRequests,omitempty"`
-	Requests         *[]*Request    `json:"requests,omitempty"` // Changed to pointer to slice
-	Stubs            []Stub         `json:"stubs,omitempty"`
-	Middleware       string         `json:"middleware,omitempty"`
-	DefaultResponse  *Response      `json:"defaultResponse,omitempty"`
-	AllowCORS        bool           `json:"allowCORS,omitempty"`
-	Key              string         `json:"key,omitempty"`
-	Cert             string         `json:"cert,omitempty"`
-	MutualAuth       bool           `json:"mutualAuth,omitempty"`
-	Mode             string         `json:"mode,omitempty"`
-	Host             string         `json:"host,omitempty"`
-	Links            *ImposterLinks `json:"_links,omitempty"`
-}
-
-// ImposterLinks contains hypermedia links for an imposter
-type ImposterLinks struct {
-	Self  *Link `json:"self"`
-	Stubs *Link `json:"stubs,omitempty"`
+	Port             int                    `json:"port"`
+	Protocol         string                 `json:"protocol"`
+	Name             string                 `json:"name,omitempty"`
+	NumberOfRequests *int                   `json:"numberOfRequests,omitempty"`
+	RecordRequests   bool                   `json:"recordRequests"`
+	Requests         *[]*Request            `json:"requests,omitempty"`
+	Stubs            *[]Stub                `json:"stubs,omitempty"`
+	Middleware       string                 `json:"middleware,omitempty"`
+	DefaultResponse  *Response              `json:"defaultResponse,omitempty"`
+	AllowCORS        bool                   `json:"allowCORS,omitempty"`
+	Key              string                 `json:"key,omitempty"`
+	Cert             string                 `json:"cert,omitempty"`
+	MutualAuth       bool                   `json:"mutualAuth,omitempty"`
+	Mode             string                 `json:"mode,omitempty"`
+	Host             string                 `json:"host,omitempty"`
+	Links            map[string]interface{} `json:"_links,omitempty"`
 }
 
 // Link represents a hypermedia link
@@ -226,9 +220,9 @@ func (imp *Imposter) resolveResponse(config *ResponseConfig, request *Request, r
 	}
 
 	// Apply behaviors
-	if len(config.Behaviors) > 0 {
+	if config.Behaviors != nil {
 		var err error
-		response, err = imp.behaviorExecutor.Execute(request, response, config.Behaviors)
+		response, err = imp.behaviorExecutor.Execute(request, response, []Behavior{*config.Behaviors})
 		if err != nil {
 			return nil, err
 		}
@@ -264,46 +258,53 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 	defer imp.mu.RUnlock()
 
 	info := &ImposterInfo{
-		Port:             imp.port,
-		Protocol:         imp.protocol,
-		Name:             imp.name,
-		NumberOfRequests: imp.numberOfRequests,
-		RecordRequests:   imp.recordRequests,
-		Middleware:       imp.middleware,
-		DefaultResponse:  imp.defaultResponse,
-		AllowCORS:        imp.allowCORS,
-		Key:              imp.key,
-		Cert:             imp.cert,
-		MutualAuth:       imp.mutualAuth,
-		Mode:             imp.mode,
-		Host:             imp.host,
+		Port:            imp.port,
+		Protocol:        imp.protocol,
+		Name:            imp.name,
+		RecordRequests:  imp.recordRequests,
+		Middleware:      imp.middleware,
+		DefaultResponse: imp.defaultResponse,
+		AllowCORS:       imp.allowCORS,
+		Key:             imp.key,
+		Cert:            imp.cert,
+		MutualAuth:      imp.mutualAuth,
+		Mode:            imp.mode,
+		Host:            imp.host,
 	}
 
-	// Include stubs if requested
+	// Helper to check options
+	isOptionTrue := func(key string) bool {
+		val, ok := options[key]
+		if !ok {
+			return false
+		}
+		boolVal, ok := val.(bool)
+		return ok && boolVal
+	}
+
+	replayable := isOptionTrue("replayable")
+	removeProxies := isOptionTrue("removeProxies")
 	includeStubs := true
-	if options != nil {
-		if val, ok := options["stubs"]; ok {
-			if b, ok := val.(bool); ok {
-				includeStubs = b
-			}
+	if val, ok := options["stubs"]; ok {
+		if boolVal, ok := val.(bool); ok {
+			includeStubs = boolVal
 		}
 	}
 
-	// Filter stubs based on options
-	replayable := false
-	if options != nil && options["replayable"] == true {
-		replayable = true
+	// set number of requests if not replayable
+	if !replayable {
+		val := imp.numberOfRequests
+		info.NumberOfRequests = &val
 	}
 
-	removeProxies := false
-	if options != nil && options["removeProxies"] == true {
-		removeProxies = true
-	}
-
+	// Include stubs if requested
 	if includeStubs {
 		allStubs := imp.stubs.GetAll()
 
+		// Initialize as empty slice to ensure [] instead of null/omitted in JSON
+		// We use a pointer to the slice
 		filteredStubs := make([]Stub, 0, len(allStubs))
+
 		for i, stub := range allStubs {
 			if removeProxies && stub.IsProxy {
 				continue
@@ -320,14 +321,15 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 				stubCopy := stub
 				stubCopy.Links = &StubLinks{
 					Self: &Link{
-						Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs/%d", imp.port, i),
+						Href: fmt.Sprintf("/imposters/%d/stubs/%d", imp.port, i),
 					},
 				}
 				filteredStubs = append(filteredStubs, stubCopy)
 			}
 		}
-		info.Stubs = filteredStubs
+		info.Stubs = &filteredStubs
 	}
+	// If !includeStubs, info.Stubs remains nil -> omitted
 
 	// Include requests if requested
 	// If replayable is true, requests should be removed regardless of requests option
@@ -342,12 +344,12 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 
 	// Add hypermedia links (unless replayable is true)
 	if !replayable {
-		info.Links = &ImposterLinks{
-			Self: &Link{
-				Href: fmt.Sprintf("http://localhost:2525/imposters/%d", imp.port),
+		info.Links = map[string]interface{}{
+			"self": &Link{
+				Href: fmt.Sprintf("/imposters/%d", imp.port),
 			},
-			Stubs: &Link{
-				Href: fmt.Sprintf("http://localhost:2525/imposters/%d/stubs", imp.port),
+			"stubs": &Link{
+				Href: fmt.Sprintf("/imposters/%d/stubs", imp.port),
 			},
 		}
 	}
