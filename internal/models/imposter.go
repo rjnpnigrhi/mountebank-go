@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -339,7 +340,27 @@ func (imp *Imposter) ToJSON(options map[string]interface{}) *ImposterInfo {
 		if reqs == nil {
 			reqs = make([]*Request, 0)
 		}
-		info.Requests = &reqs
+
+		// Ensure body is string for all requests
+		safeReqs := make([]*Request, len(reqs))
+		for i, r := range reqs {
+			// Shallow copy to avoid mutating original
+			newR := *r
+
+			// Check if body is not a string (e.g. Map/Slice from JSON parsing)
+			if newR.Body != nil {
+				if _, ok := newR.Body.(string); !ok {
+					// Marshal back to string
+					b, err := json.Marshal(newR.Body)
+					if err == nil {
+						newR.Body = string(b)
+					}
+				}
+			}
+			safeReqs[i] = &newR
+		}
+
+		info.Requests = &safeReqs
 	}
 
 	// Add hypermedia links (unless replayable is true)
