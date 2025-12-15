@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -115,11 +116,17 @@ func New(config *Config) (*Server, error) {
 	if err != nil {
 		s.logger.Errorf("Failed to load imposters from data store: %v", err)
 	} else {
+		var wg sync.WaitGroup
 		for _, cfg := range configs {
-			if err := s.CreateImposter(cfg); err != nil {
-				s.logger.Errorf("Failed to create imposter from config on port %d: %v", cfg.Port, err)
-			}
+			wg.Add(1)
+			go func(c *models.ImposterConfig) {
+				defer wg.Done()
+				if err := s.CreateImposter(c); err != nil {
+					s.logger.Errorf("Failed to create imposter from config on port %d: %v", c.Port, err)
+				}
+			}(cfg)
 		}
+		wg.Wait()
 	}
 
 	return s, nil

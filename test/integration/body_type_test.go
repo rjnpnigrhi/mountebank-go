@@ -15,6 +15,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// User provided struct
+type ImposterRequest struct {
+	RequestFrom string `json:"requestFrom"`
+	Method      string `json:"method"`
+	Path        string `json:"path"`
+	Query       struct {
+	} `json:"query"`
+	Headers struct {
+		Host           string `json:"Host"`
+		UserAgent      string `json:"User-Agent"`
+		ContentLength  string `json:"Content-Length"`
+		Accept         string `json:"Accept"`
+		Authorization  string `json:"Authorization"`
+		ContentType    string `json:"Content-Type"`
+		IdempotencyKey string `json:"Idempotency_key"`
+		SpanID         string `json:"Span_id"`
+		TraceID        string `json:"Trace_id"`
+		AcceptEncoding string `json:"Accept-Encoding"`
+	} `json:"headers"`
+
+	Body      string    `json:"body"`
+	IP        string    `json:"ip"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type ImposterResponse struct {
+	Requests []ImposterRequest `json:"requests"`
+}
+
 func TestJSONBodyIsStringInAPI(t *testing.T) {
 	// Start mountebank server
 	config := &server.Config{
@@ -72,27 +101,23 @@ func TestJSONBodyIsStringInAPI(t *testing.T) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	// Parse generic map to inspect type
-	var imposterDetail map[string]interface{}
-	err = json.Unmarshal(bodyBytes, &imposterDetail)
-	require.NoError(t, err)
+	// Verify we can unmarshal into user struct
+	var imposterResp ImposterResponse
+	err = json.Unmarshal(bodyBytes, &imposterResp)
+	require.NoError(t, err, "Should be able to unmarshal API response into user struct")
 
-	requests, ok := imposterDetail["requests"].([]interface{})
-	require.True(t, ok, "requests should be a list")
-	require.Len(t, requests, 1)
+	require.Len(t, imposterResp.Requests, 1)
+	req := imposterResp.Requests[0]
 
-	req1 := requests[0].(map[string]interface{})
-	body := req1["body"]
+	// Verify Body is a JSON string
+	assert.Contains(t, req.Body, "foo")
+	assert.Contains(t, req.Body, "bar")
 
-	// The fix should ensure this is a string
-	_, isString := body.(string)
-	assert.True(t, isString, "Expected body to be a string, got %T: %v", body, body)
-
-	if isString {
-		strBody := body.(string)
-		assert.Contains(t, strBody, "foo")
-		assert.Contains(t, strBody, "bar")
-	}
+	// Double check it's valid JSON itself
+	var bodyJSON map[string]interface{}
+	err = json.Unmarshal([]byte(req.Body), &bodyJSON)
+	require.NoError(t, err, "Body string should be valid JSON")
+	assert.Equal(t, "bar", bodyJSON["foo"])
 }
 
 func createBody(t *testing.T, v interface{}) io.Reader {

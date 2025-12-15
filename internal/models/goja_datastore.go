@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/dop251/goja"
 	"github.com/mountebank-testing/mountebank-go/internal/util"
@@ -14,6 +15,7 @@ type GojaDataStore struct {
 	vm     *goja.Runtime
 	repo   *goja.Object
 	logger *util.Logger
+	mu     sync.Mutex
 }
 
 // NewGojaDataStore creates a new Goja data store
@@ -79,6 +81,9 @@ func NewGojaDataStore(path string, logger *util.Logger) (*GojaDataStore, error) 
 
 // Load loads all imposters from the store
 func (s *GojaDataStore) Load() ([]*ImposterConfig, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	loadVal := s.repo.Get("load")
 	load, ok := goja.AssertFunction(loadVal)
 	if !ok {
@@ -115,13 +120,13 @@ func (s *GojaDataStore) Load() ([]*ImposterConfig, error) {
 
 	// Convert result to []*ImposterConfig
 	var configs []*ImposterConfig
-	
+
 	// Marshaling via JSON is easiest to ensure type safety
 	jsonBytes, err := json.Marshal(res.Export())
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if err := json.Unmarshal(jsonBytes, &configs); err != nil {
 		return nil, err
 	}
@@ -131,6 +136,9 @@ func (s *GojaDataStore) Load() ([]*ImposterConfig, error) {
 
 // Save persists an imposter
 func (s *GojaDataStore) Save(imposter *Imposter) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	addVal := s.repo.Get("add")
 	add, ok := goja.AssertFunction(addVal)
 	if !ok {
@@ -145,6 +153,9 @@ func (s *GojaDataStore) Save(imposter *Imposter) error {
 
 // Delete removes an imposter
 func (s *GojaDataStore) Delete(port int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	delVal := s.repo.Get("del") // 'del' or 'delete'? JS usually 'del' to avoid keyword
 	del, ok := goja.AssertFunction(delVal)
 	if !ok {
@@ -161,6 +172,9 @@ func (s *GojaDataStore) Delete(port int) error {
 
 // DeleteAll removes all imposters
 func (s *GojaDataStore) DeleteAll() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	delAllVal := s.repo.Get("deleteAll")
 	delAll, ok := goja.AssertFunction(delAllVal)
 	if !ok {
