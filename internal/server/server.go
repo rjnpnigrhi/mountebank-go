@@ -428,33 +428,43 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		correlationID := util.GenerateUUID()
+		if os.Getenv("EXTENSIVE_LOGS") == "true" {
+			correlationID := util.GenerateUUID()
 
-		// Log Request
-		bodyBytes, _ := io.ReadAll(r.Body)
-		r.Body.Close()
-		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			// Log Request
+			bodyBytes, _ := io.ReadAll(r.Body)
+			r.Body.Close()
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		s.logger.Infof("[ADMIN] Request | CorrelationID: %s | Method: %s | URL: %s | Size: %d | Headers: %v | Body: %s",
-			correlationID, r.Method, r.URL.String(), len(bodyBytes), r.Header, string(bodyBytes))
+			s.logger.Infof("[ADMIN] Request | CorrelationID: %s | Method: %s | URL: %s | Size: %d | Headers: %v | Body: %s",
+				correlationID, r.Method, r.URL.String(), len(bodyBytes), r.Header, string(bodyBytes))
 
-		// Wrap response writer
-		rw := &responseWriter{
-			ResponseWriter: w,
-			status:         200,
-			body:           &bytes.Buffer{},
+			// Wrap response writer
+			rw := &responseWriter{
+				ResponseWriter: w,
+				status:         200,
+				body:           &bytes.Buffer{},
+			}
+
+			next.ServeHTTP(rw, r)
+			duration := time.Since(start)
+
+			msg := fmt.Sprintf("[ADMIN] Response | CorrelationID: %s | Status: %d | Time: %v | Size: %d | Headers: %v | Body: %s",
+				correlationID, rw.status, duration, rw.body.Len(), rw.Header(), rw.body.String())
+
+			if duration > 100*time.Millisecond {
+				msg += " (SLOW)"
+			}
+			s.logger.Info(msg)
+		} else {
+			next.ServeHTTP(w, r)
+			duration := time.Since(start)
+			msg := fmt.Sprintf("[ADMIN] %s %s took %v", r.Method, r.URL.String(), duration)
+			if duration > 100*time.Millisecond {
+				msg += " (SLOW)"
+			}
+			s.logger.Info(msg)
 		}
-
-		next.ServeHTTP(rw, r)
-		duration := time.Since(start)
-
-		msg := fmt.Sprintf("[ADMIN] Response | CorrelationID: %s | Status: %d | Time: %v | Size: %d | Headers: %v | Body: %s",
-			correlationID, rw.status, duration, rw.body.Len(), rw.Header(), rw.body.String())
-
-		if duration > 100*time.Millisecond {
-			msg += " (SLOW)"
-		}
-		s.logger.Info(msg)
 	})
 }
 
