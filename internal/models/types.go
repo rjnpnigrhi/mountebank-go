@@ -201,7 +201,7 @@ type ResponseConfig struct {
 	Proxy     *ProxyConfig `json:"proxy,omitempty"`
 	Inject    string       `json:"inject,omitempty"`
 	Fault     *FaultConfig `json:"fault,omitempty"`
-	Behaviors []Behavior   `json:"behaviors,omitempty"`
+	Behaviors *Behavior    `json:"_behaviors,omitempty"`
 	Repeat    int          `json:"repeat,omitempty"`
 }
 

@@ -220,9 +220,9 @@ func (imp *Imposter) resolveResponse(config *ResponseConfig, request *Request, r
 	}
 
 	// Apply behaviors
-	if len(config.Behaviors) > 0 {
+	if config.Behaviors != nil {
 		var err error
-		response, err = imp.behaviorExecutor.Execute(request, response, config.Behaviors)
+		response, err = imp.behaviorExecutor.Execute(request, response, []Behavior{*config.Behaviors})
 		if err != nil {
 			return nil, err
 		}

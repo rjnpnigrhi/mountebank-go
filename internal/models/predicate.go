@@ -85,28 +85,61 @@ func (pe *PredicateEvaluator) Evaluate(predicate Predicate, request *Request) bo
 func (pe *PredicateEvaluator) evaluateEquals(predicate Predicate, request *Request) bool {
 	expected := pe.normalize(predicate.Equals, predicate, false)
 	actual := pe.normalize(pe.requestToMap(request), predicate, true)
-	
+
 	return pe.predicateSatisfied(expected, actual, predicate, func(a, b interface{}) bool {
 		return fmt.Sprint(a) == fmt.Sprint(b)
 	})
 }
 
 // evaluateDeepEquals checks deep equality
+// evaluateDeepEquals checks deep equality
 func (pe *PredicateEvaluator) evaluateDeepEquals(predicate Predicate, request *Request) bool {
 	expected := pe.normalize(predicate.DeepEquals, predicate, false)
 	actual := pe.normalize(pe.requestToMap(request), predicate, true)
-	
-	expectedJSON, _ := json.Marshal(expected)
-	actualJSON, _ := json.Marshal(actual)
-	
-	return string(expectedJSON) == string(actualJSON)
+
+	// The root request object usually contains more fields than the predicate (e.g. method, headers).
+	// But deepEquals expects the fields THAT ARE PROVIDED to match exactly.
+	// So we iterate over the expected map keys and compare the values strictly.
+
+	expectedMap, ok := expected.(map[string]interface{})
+	if !ok {
+		// Fallback for non-map predicate (unlikely for matched level)
+		expectedJSON, _ := json.Marshal(expected)
+		actualJSON, _ := json.Marshal(actual)
+		return string(expectedJSON) == string(actualJSON)
+	}
+
+	actualMap, ok := actual.(map[string]interface{})
+	if !ok {
+		// If expected is map but actual is not, they are not equal
+		return false
+	}
+
+	for k, v := range expectedMap {
+		actualVal, exists := actualMap[k]
+		if !exists {
+			// Expected key missing in actual
+			return false
+		}
+
+		// Prepare JSON for strict comparison of the value
+		// This ensures nested objects must match exactly (no extra fields in actual nested objects)
+		expectedJSON, _ := json.Marshal(v)
+		actualJSON, _ := json.Marshal(actualVal)
+
+		if string(expectedJSON) != string(actualJSON) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // evaluateContains checks if actual contains expected
 func (pe *PredicateEvaluator) evaluateContains(predicate Predicate, request *Request) bool {
 	expected := pe.normalize(predicate.Contains, predicate, false)
 	actual := pe.normalize(pe.requestToMap(request), predicate, true)
-	
+
 	return pe.predicateSatisfied(expected, actual, predicate, func(a, b interface{}) bool {
 		aStr := fmt.Sprint(a)
 		bStr := fmt.Sprint(b)
@@ -118,7 +151,7 @@ func (pe *PredicateEvaluator) evaluateContains(predicate Predicate, request *Req
 func (pe *PredicateEvaluator) evaluateStartsWith(predicate Predicate, request *Request) bool {
 	expected := pe.normalize(predicate.StartsWith, predicate, false)
 	actual := pe.normalize(pe.requestToMap(request), predicate, true)
-	
+
 	return pe.predicateSatisfied(expected, actual, predicate, func(a, b interface{}) bool {
 		aStr := fmt.Sprint(a)
 		bStr := fmt.Sprint(b)
@@ -130,7 +163,7 @@ func (pe *PredicateEvaluator) evaluateStartsWith(predicate Predicate, request *R
 func (pe *PredicateEvaluator) evaluateEndsWith(predicate Predicate, request *Request) bool {
 	expected := pe.normalize(predicate.EndsWith, predicate, false)
 	actual := pe.normalize(pe.requestToMap(request), predicate, true)
-	
+
 	return pe.predicateSatisfied(expected, actual, predicate, func(a, b interface{}) bool {
 		aStr := fmt.Sprint(a)
 		bStr := fmt.Sprint(b)
@@ -378,7 +411,7 @@ func (pe *PredicateEvaluator) normalizeValue(value interface{}, predicate Predic
 			}
 		}
 	}
-	
+
 	// Handle except pattern
 	if predicate.Except != "" {
 		if str, ok := value.(string); ok {
@@ -386,19 +419,19 @@ func (pe *PredicateEvaluator) normalizeValue(value interface{}, predicate Predic
 			value = strings.ReplaceAll(str, predicate.Except, "")
 		}
 	}
-	
+
 	// Handle case sensitivity
 	if !caseSensitive {
 		if str, ok := value.(string); ok {
 			value = strings.ToLower(str)
 		}
 	}
-	
+
 	// Handle nested objects
 	if objMap, ok := value.(map[string]interface{}); ok {
 		return pe.normalize(objMap, predicate, caseSensitive)
 	}
-	
+
 	// Handle arrays
 	if arr, ok := value.([]interface{}); ok {
 		result := make([]interface{}, len(arr))
@@ -407,14 +440,14 @@ func (pe *PredicateEvaluator) normalizeValue(value interface{}, predicate Predic
 		}
 		return result
 	}
-	
+
 	return value
 }
 
 // requestToMap converts a request to a map for predicate evaluation
 func (pe *PredicateEvaluator) requestToMap(request *Request) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	if request.Method != "" {
 		result["method"] = request.Method
 	}
@@ -433,6 +466,6 @@ func (pe *PredicateEvaluator) requestToMap(request *Request) map[string]interfac
 	if request.Data != "" {
 		result["data"] = request.Data
 	}
-	
+
 	return result
 }
