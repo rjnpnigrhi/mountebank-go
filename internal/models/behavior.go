@@ -148,14 +148,18 @@ func (be *BehaviorExecutor) executeDecorate(request *Request, response *Response
 // executeCopy copies values from request to response
 func (be *BehaviorExecutor) executeCopy(request *Request, response *Response, copies []CopyBehavior) (*Response, error) {
 	for _, copy := range copies {
+		be.logger.Debugf("Executing Copy behavior: From=%s, Into=%s", copy.From, copy.Into)
 		value := be.extractValue(request, copy.From)
+		be.logger.Debugf("Extracted value: %v", value)
 		if value != nil {
 			// Apply selector if present
 			if copy.Using != nil {
 				value = be.applySelector(value, copy.Using)
+				be.logger.Debugf("Selector applied. Result: %v", value)
 			}
 
 			if value != nil {
+				be.logger.Debugf("Injecting value into response...")
 				be.injectValue(response, copy.Into, value)
 			}
 		}

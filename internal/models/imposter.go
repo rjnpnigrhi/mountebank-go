@@ -223,7 +223,7 @@ func (imp *Imposter) resolveResponse(config *ResponseConfig, request *Request, r
 	// Apply behaviors
 	if config.Behaviors != nil {
 		var err error
-		response, err = imp.behaviorExecutor.Execute(request, response, []Behavior{*config.Behaviors})
+		response, err = imp.behaviorExecutor.Execute(request, response, config.Behaviors)
 		if err != nil {
 			return nil, err
 		}
