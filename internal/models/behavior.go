@@ -172,9 +172,16 @@ func (be *BehaviorExecutor) applySelector(value interface{}, selector *CopySelec
 	strValue := fmt.Sprintf("%v", value)
 
 	if selector.Method == "regex" {
-		re, err := regexp.Compile(selector.Selector)
+		pattern := selector.Selector
+		if selector.Options != nil {
+			if ignoreCase, ok := selector.Options["ignoreCase"].(bool); ok && ignoreCase {
+				pattern = "(?i)" + pattern
+			}
+		}
+
+		re, err := regexp.Compile(pattern)
 		if err != nil {
-			be.logger.Warnf("Invalid regex selector: %s", selector.Selector)
+			be.logger.Warnf("Invalid regex selector: %s (err: %v)", selector.Selector, err)
 			return value
 		}
 
