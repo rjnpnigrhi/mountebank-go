@@ -265,7 +265,7 @@ func (pe *PredicateEvaluator) evaluateInject(predicate Predicate, request *Reque
 				// but historically might have been different or user might expect specific args.
 				// Actually, predicate injection legacy was function(request, logger) ?
 				// Let's assume if 2 args, it's (config, logger) as passed before? 
-				// Wait, the previous code was: (%s)(config, logger)
+				// Wait, the previous code was: (config, logger)
 				// implying it ALWAYS passed 2 args.
 				// If the user function is function(config), then passing (config, logger) works because JS ignores extra args.
 				// If the user function is function(request, logger), then passing (config, logger) passes 'config' as 'request'.

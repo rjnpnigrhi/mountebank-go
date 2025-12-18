@@ -203,8 +203,20 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 				// Legacy: function(request, state, logger)
 				return fn(request, state, logger);
 			} else {
-				// Standard: function(config)
-				return fn(config);
+				// Check if the function specifically requests 'request' as the first argument
+				// This handles legacy inline scripts like function(request) { ... }
+				var src = fn.toString();
+				// Use regex to detect function(request)
+				var isLegacyRequest = /function\s*\w*\s*\(\s*request\s*\)/.test(src);
+	
+				if (isLegacyRequest) {
+					// Legacy: function(request, state, logger)
+					// Even if arity is 1, if it's named request, pass request.
+					return fn(request, state, logger);
+				} else {
+					// Standard: function(config)
+					return fn(config);
+				}
 			}
 		})()
 	`, injectFunction)
