@@ -320,9 +320,42 @@ func (pe *PredicateEvaluator) predicateSatisfied(expected, actual interface{}, p
 
 	// Handle maps
 	if expectedMap, ok := expected.(map[string]interface{}); ok {
+		// If actual is a string (e.g. JSON body), try to parse it as map
+		if actualStr, ok := actual.(string); ok {
+			var parsedMap map[string]interface{}
+			if err := json.Unmarshal([]byte(actualStr), &parsedMap); err == nil {
+				actual = pe.normalize(parsedMap, predicate, true)
+			}
+		}
+
 		if actualMap, ok := actual.(map[string]interface{}); ok {
 			for fieldName, expectedValue := range expectedMap {
+				// Special handling for headers to support _ vs - mismatch
+				// Since normalize() lowercases keys, standard matching works for CaseInsensitive.
+				// But if expected has underscore and actual has dash, and both are lowercased:
+				// correlation_id vs correlation-id.
+				// We can try to replace all _ and - with empty string for key matching?
+				// This is aggressive but might solve the "I think go version does not consider" issue if it's about header names.
+				// But let's verify if we want to do this globally or just try harder lookup.
+
 				actualValue, ok := actualMap[fieldName]
+				if !ok {
+					// Key not found. Try fuzzy header matching if the key looks like a header?
+					// Or just try replacing _ with - or vice versa?
+					// If expected is "correlation_id", check "correlation-id".
+					// If expected is "correlation-id", check "correlation_id".
+					altKey1 := strings.ReplaceAll(fieldName, "_", "-")
+					altKey2 := strings.ReplaceAll(fieldName, "-", "_")
+
+					if val, ok2 := actualMap[altKey1]; ok2 {
+						actualValue = val
+						ok = true
+					} else if val, ok3 := actualMap[altKey2]; ok3 {
+						actualValue = val
+						ok = true
+					}
+				}
+
 				if !ok {
 					return false
 				}
@@ -375,7 +408,7 @@ func (pe *PredicateEvaluator) normalize(value interface{}, predicate Predicate, 
 	// If value is a map, normalize its keys/values
 	if objMap, ok := value.(map[string]interface{}); ok {
 		result := make(map[string]interface{})
-		caseSensitive := predicate.CaseSensitive == nil || *predicate.CaseSensitive
+		caseSensitive := predicate.CaseSensitive != nil && *predicate.CaseSensitive
 
 		for key, val := range objMap {
 			normalizedKey := key
@@ -388,7 +421,7 @@ func (pe *PredicateEvaluator) normalize(value interface{}, predicate Predicate, 
 	}
 
 	// If value is not a map, just normalize the value itself
-	caseSensitive := predicate.CaseSensitive == nil || *predicate.CaseSensitive
+	caseSensitive := predicate.CaseSensitive != nil && *predicate.CaseSensitive
 	return pe.normalizeValue(value, predicate, caseSensitive)
 }
 
@@ -510,6 +543,15 @@ func (pe *PredicateEvaluator) requestToMap(request *Request) map[string]interfac
 	}
 	if request.Data != "" {
 		result["data"] = request.Data
+	}
+	if request.RequestFrom != "" {
+		result["requestFrom"] = request.RequestFrom
+	}
+	if request.IP != "" {
+		result["ip"] = request.IP
+	}
+	if request.Timestamp != "" {
+		result["timestamp"] = request.Timestamp
 	}
 
 	return result
