@@ -260,6 +260,11 @@ func (s *Server) responseToHTTP(response *models.Response, w http.ResponseWriter
 				for _, val := range v {
 					w.Header().Add(key, val)
 				}
+			case []interface{}:
+				// Flatten JSON arrays to single value (take 1st element) as requested
+				if len(v) > 0 {
+					w.Header().Set(key, fmt.Sprint(v[0]))
+				}
 			default:
 				w.Header().Set(key, fmt.Sprint(v))
 			}
