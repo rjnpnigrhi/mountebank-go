@@ -33,52 +33,118 @@ func NewPredicateEvaluator(encoding string, logger *util.Logger, state map[strin
 
 // Evaluate evaluates a predicate against a request
 func (pe *PredicateEvaluator) Evaluate(predicate Predicate, request *Request) bool {
+	hasOperators := false
+
 	// Check which predicate type is being used
 	if predicate.Equals != nil {
-		return pe.evaluateEquals(predicate, request)
+		hasOperators = true
+		if pe.evaluateEquals(predicate, request) {
+			return true
+		}
 	}
 	if predicate.DeepEquals != nil {
-		return pe.evaluateDeepEquals(predicate, request)
+		hasOperators = true
+		if pe.evaluateDeepEquals(predicate, request) {
+			return true
+		}
 	}
+	// Note: Implicit OR logic means we check each one. If match, return true (short-circuit).
+	// If all defined operators fail, we return false.
+	// If no operators defined, we return true (empty object matches all).
+
 	if predicate.Contains != nil {
-		return pe.evaluateContains(predicate, request)
+		hasOperators = true
+		if pe.evaluateContains(predicate, request) {
+			return true
+		}
 	}
 	if predicate.StartsWith != nil {
-		return pe.evaluateStartsWith(predicate, request)
+		hasOperators = true
+		if pe.evaluateStartsWith(predicate, request) {
+			return true
+		}
 	}
 	if predicate.EndsWith != nil {
-		return pe.evaluateEndsWith(predicate, request)
+		hasOperators = true
+		if pe.evaluateEndsWith(predicate, request) {
+			return true
+		}
 	}
 	if predicate.Matches != nil {
-		return pe.evaluateMatches(predicate, request)
+		hasOperators = true
+		if pe.evaluateMatches(predicate, request) {
+			return true
+		}
 	}
 	if predicate.Exists != nil {
-		return pe.evaluateExists(predicate, request)
+		hasOperators = true
+		if pe.evaluateExists(predicate, request) {
+			return true
+		}
 	}
 	if predicate.Not != nil {
-		return !pe.Evaluate(*predicate.Not, request)
+		hasOperators = true
+		// Implicit OR: matches(A) || not(matches(B))
+		if !pe.Evaluate(*predicate.Not, request) {
+			return true
+		}
 	}
 	if predicate.Or != nil {
+		hasOperators = true
 		for _, p := range predicate.Or {
 			if pe.Evaluate(p, request) {
 				return true
 			}
 		}
-		return false
+		// If 'Or' operator is present but none of its children matched,
+		// this specific operator result is FALSE.
+		// But since we are doing implicit OR of top-level fields, we just continue.
+		// Wait, pe.Evaluate(p) returns boolean for the child predicate.
+		// predicate.Or is []Predicate.
+		// Standard 'Or' usage: [ {A}, {B} ]. If A matches OR B matches -> 'Or' operator is true.
+		// So we loop. If we find match, 'Or' operator is satisfied -> return true for Implicit OR.
+		// Wait, loop above:
+		/*
+			for _, p := range predicate.Or {
+				if pe.Evaluate(p, request) {
+					return true
+				}
+			}
+		*/
+		// This loop returns true if ANY child matches. So 'Or' operator is satisfied.
+		// Then we return true for the whole evaluate function? YES.
+		// Correct.
+		// What if Or list is empty? Then 'Or' operator is satisfied? No, usually false.
+		// If defined but empty, loop does nothing.
+		// Then we treat it as not satisfying.
 	}
 	if predicate.And != nil {
+		hasOperators = true
+		matchesAnd := true
 		for _, p := range predicate.And {
 			if !pe.Evaluate(p, request) {
-				return false
+				matchesAnd = false
+				break
 			}
 		}
-		return true
+		if len(predicate.And) > 0 && matchesAnd {
+			return true
+		}
 	}
 	if predicate.Inject != "" {
-		return pe.evaluateInject(predicate, request)
+		hasOperators = true
+		if pe.evaluateInject(predicate, request) {
+			return true
+		}
 	}
 
-	return false
+	// If we found any operators and none returned true, then it's a mismatch.
+	if hasOperators {
+		return false
+	}
+
+	// If no operators, return true
+	return true
 }
 
 // evaluateEquals checks if request fields equal expected values
