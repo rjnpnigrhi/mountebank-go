@@ -253,20 +253,63 @@ func (be *BehaviorExecutor) extractValue(request *Request, path string) interfac
 }
 
 // injectValue injects a value into a response using a token
+// injectValue injects a value into a response using a token
 func (be *BehaviorExecutor) injectValue(response *Response, token string, value interface{}) {
 	strValue := fmt.Sprintf("%v", value)
 
-	// Replace in body if it's a string
-	if strBody, ok := response.Body.(string); ok {
-		response.Body = strings.ReplaceAll(strBody, token, strValue)
+	// Replace in body
+	if response.Body != nil {
+		response.Body = be.injectToken(response.Body, token, strValue)
 	}
 
 	// Replace in headers
 	for k, v := range response.Headers {
 		if strHeader, ok := v.(string); ok {
 			response.Headers[k] = strings.ReplaceAll(strHeader, token, strValue)
+		} else if sliceHeader, ok := v.([]string); ok {
+			newSlice := make([]string, len(sliceHeader))
+			for i, val := range sliceHeader {
+				newSlice[i] = strings.ReplaceAll(val, token, strValue)
+			}
+			response.Headers[k] = newSlice
+		} else if interfaceSlice, ok := v.([]interface{}); ok {
+			// Handle []interface{} headers (from JSON unmarshal)
+			newSlice := make([]interface{}, len(interfaceSlice))
+			for i, val := range interfaceSlice {
+				if strVal, ok := val.(string); ok {
+					newSlice[i] = strings.ReplaceAll(strVal, token, strValue)
+				} else {
+					newSlice[i] = val
+				}
+			}
+			response.Headers[k] = newSlice
 		}
 	}
+}
+
+// injectToken recursively replaces a token in a value
+func (be *BehaviorExecutor) injectToken(data interface{}, token, value string) interface{} {
+	if str, ok := data.(string); ok {
+		return strings.ReplaceAll(str, token, value)
+	}
+
+	if m, ok := data.(map[string]interface{}); ok {
+		newMap := make(map[string]interface{})
+		for k, v := range m {
+			newMap[k] = be.injectToken(v, token, value)
+		}
+		return newMap
+	}
+
+	if s, ok := data.([]interface{}); ok {
+		newSlice := make([]interface{}, len(s))
+		for i, v := range s {
+			newSlice[i] = be.injectToken(v, token, value)
+		}
+		return newSlice
+	}
+
+	return data
 }
 
 // getNestedValue gets a value from a nested map using dot notation
