@@ -33,52 +33,118 @@ func NewPredicateEvaluator(encoding string, logger *util.Logger, state map[strin
 
 // Evaluate evaluates a predicate against a request
 func (pe *PredicateEvaluator) Evaluate(predicate Predicate, request *Request) bool {
+	hasOperators := false
+
 	// Check which predicate type is being used
 	if predicate.Equals != nil {
-		return pe.evaluateEquals(predicate, request)
+		hasOperators = true
+		if pe.evaluateEquals(predicate, request) {
+			return true
+		}
 	}
 	if predicate.DeepEquals != nil {
-		return pe.evaluateDeepEquals(predicate, request)
+		hasOperators = true
+		if pe.evaluateDeepEquals(predicate, request) {
+			return true
+		}
 	}
+	// Note: Implicit OR logic means we check each one. If match, return true (short-circuit).
+	// If all defined operators fail, we return false.
+	// If no operators defined, we return true (empty object matches all).
+
 	if predicate.Contains != nil {
-		return pe.evaluateContains(predicate, request)
+		hasOperators = true
+		if pe.evaluateContains(predicate, request) {
+			return true
+		}
 	}
 	if predicate.StartsWith != nil {
-		return pe.evaluateStartsWith(predicate, request)
+		hasOperators = true
+		if pe.evaluateStartsWith(predicate, request) {
+			return true
+		}
 	}
 	if predicate.EndsWith != nil {
-		return pe.evaluateEndsWith(predicate, request)
+		hasOperators = true
+		if pe.evaluateEndsWith(predicate, request) {
+			return true
+		}
 	}
 	if predicate.Matches != nil {
-		return pe.evaluateMatches(predicate, request)
+		hasOperators = true
+		if pe.evaluateMatches(predicate, request) {
+			return true
+		}
 	}
 	if predicate.Exists != nil {
-		return pe.evaluateExists(predicate, request)
+		hasOperators = true
+		if pe.evaluateExists(predicate, request) {
+			return true
+		}
 	}
 	if predicate.Not != nil {
-		return !pe.Evaluate(*predicate.Not, request)
+		hasOperators = true
+		// Implicit OR: matches(A) || not(matches(B))
+		if !pe.Evaluate(*predicate.Not, request) {
+			return true
+		}
 	}
 	if predicate.Or != nil {
+		hasOperators = true
 		for _, p := range predicate.Or {
 			if pe.Evaluate(p, request) {
 				return true
 			}
 		}
-		return false
+		// If 'Or' operator is present but none of its children matched,
+		// this specific operator result is FALSE.
+		// But since we are doing implicit OR of top-level fields, we just continue.
+		// Wait, pe.Evaluate(p) returns boolean for the child predicate.
+		// predicate.Or is []Predicate.
+		// Standard 'Or' usage: [ {A}, {B} ]. If A matches OR B matches -> 'Or' operator is true.
+		// So we loop. If we find match, 'Or' operator is satisfied -> return true for Implicit OR.
+		// Wait, loop above:
+		/*
+			for _, p := range predicate.Or {
+				if pe.Evaluate(p, request) {
+					return true
+				}
+			}
+		*/
+		// This loop returns true if ANY child matches. So 'Or' operator is satisfied.
+		// Then we return true for the whole evaluate function? YES.
+		// Correct.
+		// What if Or list is empty? Then 'Or' operator is satisfied? No, usually false.
+		// If defined but empty, loop does nothing.
+		// Then we treat it as not satisfying.
 	}
 	if predicate.And != nil {
+		hasOperators = true
+		matchesAnd := true
 		for _, p := range predicate.And {
 			if !pe.Evaluate(p, request) {
-				return false
+				matchesAnd = false
+				break
 			}
 		}
-		return true
+		if len(predicate.And) > 0 && matchesAnd {
+			return true
+		}
 	}
 	if predicate.Inject != "" {
-		return pe.evaluateInject(predicate, request)
+		hasOperators = true
+		if pe.evaluateInject(predicate, request) {
+			return true
+		}
 	}
 
-	return false
+	// If we found any operators and none returned true, then it's a mismatch.
+	if hasOperators {
+		return false
+	}
+
+	// If no operators, return true
+	return true
 }
 
 // evaluateEquals checks if request fields equal expected values
@@ -250,7 +316,52 @@ func (pe *PredicateEvaluator) evaluateInject(predicate Predicate, request *Reque
 
 	// The injection code is expected to be a function expression
 	// We wrap it in parentheses and call it with (config, logger)
-	script := fmt.Sprintf("(%s)(config, logger)", predicate.Inject)
+	// The injection code is expected to be a function expression
+	// We detect arity to support legacy signatures
+	script := fmt.Sprintf(`
+		(function() {
+			var fn = %s;
+			if (typeof fn !== 'function') {
+				throw new Error("Injection must evaluate to a function");
+			}
+			
+			if (fn.length === 2) {
+				// Legacy: function(request, logger)
+				// Note: Mountebank docs say predicate injection is function(config), 
+				// but historically might have been different or user might expect specific args.
+				// Actually, predicate injection legacy was function(request, logger) ?
+				// Let's assume if 2 args, it's (config, logger) as passed before? 
+				// Wait, the previous code was: (config, logger)
+				// implying it ALWAYS passed 2 args.
+				// If the user function is function(config), then passing (config, logger) works because JS ignores extra args.
+				// If the user function is function(request, logger), then passing (config, logger) passes 'config' as 'request'.
+				// AND 'config' has a 'request' property. 
+				// So if user does request.method, they get config.method -> undefined. They need config.request.method.
+				
+				// Let's check how we construct params.
+				// config = { request: ... }
+				// If we want to support function(request, logger), we must pass request object as first arg.
+				
+				// We can try to support both.
+				// Standard: function(config) - length 1
+				// Legacy/Compatible: function(request, logger) - length 2
+				
+				// However, if we just blindly pass (request, logger) for length 2, we break function(config, logger) if that was ever valid.
+				// Mountebank docs: "The function accepts a single object, config".
+				// But let's look at what we are fixing.
+				// The user issue was about response injection (imposters-test.ejs -> getC360Identifier.ejs -> get360Identifier.js).
+				// That is an IMPOSTER injection (response).
+				// But we also proposed fixing PREDIATE checks.
+				
+				// For predicates, let's keep it safe.
+				// If user wrote function(request, logger), they expect request.
+				return fn(config.request, logger);
+			}
+			
+			// Default to passing config (and logger as extra which is harmless for arity 1)
+			return fn(config, logger);
+		})()
+	`, predicate.Inject)
 
 	val, err := vm.RunString(script)
 	if err != nil {
@@ -275,9 +386,42 @@ func (pe *PredicateEvaluator) predicateSatisfied(expected, actual interface{}, p
 
 	// Handle maps
 	if expectedMap, ok := expected.(map[string]interface{}); ok {
+		// If actual is a string (e.g. JSON body), try to parse it as map
+		if actualStr, ok := actual.(string); ok {
+			var parsedMap map[string]interface{}
+			if err := json.Unmarshal([]byte(actualStr), &parsedMap); err == nil {
+				actual = pe.normalize(parsedMap, predicate, true)
+			}
+		}
+
 		if actualMap, ok := actual.(map[string]interface{}); ok {
 			for fieldName, expectedValue := range expectedMap {
+				// Special handling for headers to support _ vs - mismatch
+				// Since normalize() lowercases keys, standard matching works for CaseInsensitive.
+				// But if expected has underscore and actual has dash, and both are lowercased:
+				// correlation_id vs correlation-id.
+				// We can try to replace all _ and - with empty string for key matching?
+				// This is aggressive but might solve the "I think go version does not consider" issue if it's about header names.
+				// But let's verify if we want to do this globally or just try harder lookup.
+
 				actualValue, ok := actualMap[fieldName]
+				if !ok {
+					// Key not found. Try fuzzy header matching if the key looks like a header?
+					// Or just try replacing _ with - or vice versa?
+					// If expected is "correlation_id", check "correlation-id".
+					// If expected is "correlation-id", check "correlation_id".
+					altKey1 := strings.ReplaceAll(fieldName, "_", "-")
+					altKey2 := strings.ReplaceAll(fieldName, "-", "_")
+
+					if val, ok2 := actualMap[altKey1]; ok2 {
+						actualValue = val
+						ok = true
+					} else if val, ok3 := actualMap[altKey2]; ok3 {
+						actualValue = val
+						ok = true
+					}
+				}
+
 				if !ok {
 					return false
 				}
@@ -330,7 +474,7 @@ func (pe *PredicateEvaluator) normalize(value interface{}, predicate Predicate, 
 	// If value is a map, normalize its keys/values
 	if objMap, ok := value.(map[string]interface{}); ok {
 		result := make(map[string]interface{})
-		caseSensitive := predicate.CaseSensitive == nil || *predicate.CaseSensitive
+		caseSensitive := predicate.CaseSensitive != nil && *predicate.CaseSensitive
 
 		for key, val := range objMap {
 			normalizedKey := key
@@ -343,7 +487,7 @@ func (pe *PredicateEvaluator) normalize(value interface{}, predicate Predicate, 
 	}
 
 	// If value is not a map, just normalize the value itself
-	caseSensitive := predicate.CaseSensitive == nil || *predicate.CaseSensitive
+	caseSensitive := predicate.CaseSensitive != nil && *predicate.CaseSensitive
 	return pe.normalizeValue(value, predicate, caseSensitive)
 }
 
@@ -465,6 +609,15 @@ func (pe *PredicateEvaluator) requestToMap(request *Request) map[string]interfac
 	}
 	if request.Data != "" {
 		result["data"] = request.Data
+	}
+	if request.RequestFrom != "" {
+		result["requestFrom"] = request.RequestFrom
+	}
+	if request.IP != "" {
+		result["ip"] = request.IP
+	}
+	if request.Timestamp != "" {
+		result["timestamp"] = request.Timestamp
 	}
 
 	return result

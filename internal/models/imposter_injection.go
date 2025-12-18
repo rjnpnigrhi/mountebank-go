@@ -186,10 +186,38 @@ func (imp *Imposter) evaluateInject(injectFunction string, request *Request, req
 	// Older versions passed (request, response, logger).
 	// But let's assume complex_imposter_collection uses function(config).
 
+	// We detect the number of arguments the function expects (function.length)
+	// If it expects 1 argument (or 0?), we pass (config).
+	// If it expects 3 arguments, we pass (request, state, logger).
+	// This supports both legacy and modern Mountebank signatures.
+	// We wrap in an IIFE that inspects 'fn'.
 	script := fmt.Sprintf(`
 		(function() {
 			var fn = %s;
-			return fn(config, state, logger);
+			if (typeof fn !== 'function') {
+				throw new Error("Injection must evaluate to a function");
+			}
+			
+			// Check arity
+			if (fn.length === 3) {
+				// Legacy: function(request, state, logger)
+				return fn(request, state, logger);
+			} else {
+				// Check if the function specifically requests 'request' as the first argument
+				// This handles legacy inline scripts like function(request) { ... }
+				var src = fn.toString();
+				// Use regex to detect function(request)
+				var isLegacyRequest = /function\s*\w*\s*\(\s*request\s*\)/.test(src);
+	
+				if (isLegacyRequest) {
+					// Legacy: function(request, state, logger)
+					// Even if arity is 1, if it's named request, pass request.
+					return fn(request, state, logger);
+				} else {
+					// Standard: function(config)
+					return fn(config);
+				}
+			}
 		})()
 	`, injectFunction)
 

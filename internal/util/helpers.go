@@ -1,7 +1,9 @@
 package util
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"net"
 	"reflect"
 
@@ -41,17 +43,17 @@ func Clone(src interface{}) interface{} {
 // Merge merges two maps
 func Merge(dst, src map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	// Copy dst
 	for k, v := range dst {
 		result[k] = v
 	}
-	
+
 	// Merge src
 	for k, v := range src {
 		result[k] = v
 	}
-	
+
 	return result
 }
 
@@ -60,7 +62,7 @@ func Defined(v interface{}) bool {
 	if v == nil {
 		return false
 	}
-	
+
 	val := reflect.ValueOf(v)
 	switch val.Kind() {
 	case reflect.Ptr, reflect.Interface:
@@ -75,10 +77,10 @@ func IsObject(v interface{}) bool {
 	if v == nil {
 		return false
 	}
-	
+
 	val := reflect.ValueOf(v)
 	kind := val.Kind()
-	
+
 	return kind == reflect.Map || kind == reflect.Struct
 }
 
@@ -92,17 +94,17 @@ func SetDeep(obj map[string]interface{}, path []string, value interface{}) {
 	if len(path) == 0 {
 		return
 	}
-	
+
 	if len(path) == 1 {
 		obj[path[0]] = value
 		return
 	}
-	
+
 	key := path[0]
 	if _, ok := obj[key]; !ok {
 		obj[key] = make(map[string]interface{})
 	}
-	
+
 	if nested, ok := obj[key].(map[string]interface{}); ok {
 		SetDeep(nested, path[1:], value)
 	}
@@ -111,13 +113,13 @@ func SetDeep(obj map[string]interface{}, path []string, value interface{}) {
 // ObjFilter filters an object based on ignore list
 func ObjFilter(obj map[string]interface{}, ignore map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	for k, v := range obj {
 		if _, shouldIgnore := ignore[k]; !shouldIgnore {
 			result[k] = v
 		}
 	}
-	
+
 	return result
 }
 
@@ -143,4 +145,20 @@ func ToJSON(v interface{}) string {
 // FromJSON parses JSON string to object
 func FromJSON(s string, v interface{}) error {
 	return json.Unmarshal([]byte(s), v)
+}
+
+// GenerateUUID generates a random UUID (version 4)
+func GenerateUUID() string {
+	uuid := make([]byte, 16)
+	_, err := rand.Read(uuid)
+	if err != nil {
+		return ""
+	}
+
+	// Set version (4) and variant (RFC 4122)
+	uuid[6] = (uuid[6] & 0x0f) | 0x40
+	uuid[8] = (uuid[8] & 0x3f) | 0x80
+
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
 }

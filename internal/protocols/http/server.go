@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -107,6 +108,14 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var correlationID string
+	if os.Getenv("EXTENSIVE_LOGS") == "true" {
+		correlationID = util.GenerateUUID()
+		reqBodyStr := fmt.Sprintf("%v", request.Body)
+		s.logger.Infof("[IMPOSTER:%d] Request | CorrelationID: %s | Method: %s | Path: %s | Size: %d | Headers: %v | Body: %v",
+			s.port, correlationID, request.Method, request.Path, len(reqBodyStr), request.Headers, request.Body)
+	}
+
 	// Get response from imposter
 	response, err := s.getResponse(request, nil)
 	if err != nil {
@@ -130,6 +139,17 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 		return
+	}
+
+	if os.Getenv("EXTENSIVE_LOGS") == "true" {
+		// Log Response
+		statusCode := response.StatusCode
+		if statusCode == 0 {
+			statusCode = 200
+		}
+		respBodyStr := fmt.Sprintf("%v", response.Body)
+		s.logger.Infof("[IMPOSTER:%d] Response | CorrelationID: %s | Status: %d | Size: %d | Headers: %v | Body: %v",
+			s.port, correlationID, statusCode, len(respBodyStr), response.Headers, response.Body)
 	}
 
 	// Check if blocked
@@ -239,6 +259,11 @@ func (s *Server) responseToHTTP(response *models.Response, w http.ResponseWriter
 			case []string:
 				for _, val := range v {
 					w.Header().Add(key, val)
+				}
+			case []interface{}:
+				// Flatten JSON arrays to single value (take 1st element) as requested
+				if len(v) > 0 {
+					w.Header().Set(key, fmt.Sprint(v[0]))
 				}
 			default:
 				w.Header().Set(key, fmt.Sprint(v))

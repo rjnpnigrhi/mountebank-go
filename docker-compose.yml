@@ -1,33 +1,18 @@
 services:
   mountebank:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: mountebank-go:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: rjnpnigrhi/mountebank-go:sha-2ba75b5
     container_name: mountebank-go
-    ports:
-      - "2525:2525"
-      - "4011:4011"
-      - "4012:4012"
-      - "4013:4013"
+    network_mode: "host"
     # command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /app/impostersejs/imposters.ejs --allowInjection --datadir /app/data
     command: start --port 2525 --loglevel info --host 0.0.0.0 --configfile /mountebank-templates/imposters.ejs --allowInjection
     environment:
       - MB_LOG_LEVEL=info
     volumes:
-      - ./mountebank-templates:/mountebank-templates
+      - ../mountebank-templates:/mountebank-templates
       # Optional: Mount for persistent data
       # - ./data:/app/data
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:2525/" ]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-    networks:
-      - mountebank-network
 
-networks:
-  mountebank-network:
-    driver: bridge

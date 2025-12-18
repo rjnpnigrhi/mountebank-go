@@ -148,14 +148,18 @@ func (be *BehaviorExecutor) executeDecorate(request *Request, response *Response
 // executeCopy copies values from request to response
 func (be *BehaviorExecutor) executeCopy(request *Request, response *Response, copies []CopyBehavior) (*Response, error) {
 	for _, copy := range copies {
+		be.logger.Debugf("Executing Copy behavior: From=%s, Into=%s", copy.From, copy.Into)
 		value := be.extractValue(request, copy.From)
+		be.logger.Debugf("Extracted value: %v", value)
 		if value != nil {
 			// Apply selector if present
 			if copy.Using != nil {
 				value = be.applySelector(value, copy.Using)
+				be.logger.Debugf("Selector applied. Result: %v", value)
 			}
 
 			if value != nil {
+				be.logger.Debugf("Injecting value into response...")
 				be.injectValue(response, copy.Into, value)
 			}
 		}
@@ -172,9 +176,16 @@ func (be *BehaviorExecutor) applySelector(value interface{}, selector *CopySelec
 	strValue := fmt.Sprintf("%v", value)
 
 	if selector.Method == "regex" {
-		re, err := regexp.Compile(selector.Selector)
+		pattern := selector.Selector
+		if selector.Options != nil {
+			if ignoreCase, ok := selector.Options["ignoreCase"].(bool); ok && ignoreCase {
+				pattern = "(?i)" + pattern
+			}
+		}
+
+		re, err := regexp.Compile(pattern)
 		if err != nil {
-			be.logger.Warnf("Invalid regex selector: %s", selector.Selector)
+			be.logger.Warnf("Invalid regex selector: %s (err: %v)", selector.Selector, err)
 			return value
 		}
 
@@ -253,20 +264,63 @@ func (be *BehaviorExecutor) extractValue(request *Request, path string) interfac
 }
 
 // injectValue injects a value into a response using a token
+// injectValue injects a value into a response using a token
 func (be *BehaviorExecutor) injectValue(response *Response, token string, value interface{}) {
 	strValue := fmt.Sprintf("%v", value)
 
-	// Replace in body if it's a string
-	if strBody, ok := response.Body.(string); ok {
-		response.Body = strings.ReplaceAll(strBody, token, strValue)
+	// Replace in body
+	if response.Body != nil {
+		response.Body = be.injectToken(response.Body, token, strValue)
 	}
 
 	// Replace in headers
 	for k, v := range response.Headers {
 		if strHeader, ok := v.(string); ok {
 			response.Headers[k] = strings.ReplaceAll(strHeader, token, strValue)
+		} else if sliceHeader, ok := v.([]string); ok {
+			newSlice := make([]string, len(sliceHeader))
+			for i, val := range sliceHeader {
+				newSlice[i] = strings.ReplaceAll(val, token, strValue)
+			}
+			response.Headers[k] = newSlice
+		} else if interfaceSlice, ok := v.([]interface{}); ok {
+			// Handle []interface{} headers (from JSON unmarshal)
+			newSlice := make([]interface{}, len(interfaceSlice))
+			for i, val := range interfaceSlice {
+				if strVal, ok := val.(string); ok {
+					newSlice[i] = strings.ReplaceAll(strVal, token, strValue)
+				} else {
+					newSlice[i] = val
+				}
+			}
+			response.Headers[k] = newSlice
 		}
 	}
+}
+
+// injectToken recursively replaces a token in a value
+func (be *BehaviorExecutor) injectToken(data interface{}, token, value string) interface{} {
+	if str, ok := data.(string); ok {
+		return strings.ReplaceAll(str, token, value)
+	}
+
+	if m, ok := data.(map[string]interface{}); ok {
+		newMap := make(map[string]interface{})
+		for k, v := range m {
+			newMap[k] = be.injectToken(v, token, value)
+		}
+		return newMap
+	}
+
+	if s, ok := data.([]interface{}); ok {
+		newSlice := make([]interface{}, len(s))
+		for i, v := range s {
+			newSlice[i] = be.injectToken(v, token, value)
+		}
+		return newSlice
+	}
+
+	return data
 }
 
 // getNestedValue gets a value from a nested map using dot notation

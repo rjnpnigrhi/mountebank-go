@@ -35,16 +35,17 @@ func (ir *ImposterRepository) Save(imposter *Imposter) error {
 // Add adds an imposter to the repository
 func (ir *ImposterRepository) Add(imposter *Imposter) error {
 	ir.mu.Lock()
-	defer ir.mu.Unlock()
 
 	port := imposter.Port()
 	if _, exists := ir.imposters[port]; exists {
+		ir.mu.Unlock()
 		return util.NewValidationError(fmt.Sprintf("port %d is already in use", port), port)
 	}
 
 	ir.imposters[port] = imposter
-	
-	// Save to data store
+	ir.mu.Unlock()
+
+	// Save to data store (outside of lock)
 	if err := ir.Save(imposter); err != nil {
 		ir.logger.Errorf("Failed to save imposter on port %d to data store: %v", port, err)
 	}
@@ -83,7 +84,7 @@ func (ir *ImposterRepository) Delete(port int) (*Imposter, error) {
 	}
 
 	delete(ir.imposters, port)
-	
+
 	// Remove from data store
 	if ir.dataStore != nil {
 		if err := ir.dataStore.Delete(port); err != nil {
@@ -113,7 +114,7 @@ func (ir *ImposterRepository) DeleteAll() ([]*Imposter, error) {
 	}
 
 	ir.imposters = make(map[int]*Imposter)
-	
+
 	// Remove all from data store
 	if ir.dataStore != nil {
 		if err := ir.dataStore.DeleteAll(); err != nil {
