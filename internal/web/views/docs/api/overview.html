@@ -1,128 +1,185 @@
-
-
 {{ template "_header.html" . }}
 
-<h1>API Overview</h1>
+<div class="row g-4 mb-5">
+  <div class="col-lg-12">
+    <h1 class="display-4 fw-bold mb-3" style="color: #00175a;">API Overview</h1>
+    <p class="lead text-secondary mb-4">
+      Mountebank uses a basic REST style API with standard HTTP status codes.
+      Every effort has been made to provide <a href='/docs/api/errors' class="text-decoration-none fw-semibold">response
+        bodies</a> to help diagnose problems.
+    </p>
+    <div class="alert alert-light border shadow-sm" role="alert">
+      <h5 class="alert-heading fw-bold"><i class="bi bi-life-preserver text-primary me-2"></i>Need Help?</h5>
+      <p class="mb-0 text-muted">A <code>code</code> and <code>message</code> are included in errors. If you get stuck,
+        email the group on the <a href='/support' class="fw-semibold">support page</a> with your logs.</p>
+    </div>
+  </div>
+</div>
 
-<p>mountebank uses a basic REST style API with standard HTTP status codes. Every effort has
-gone into providing <a href='/docs/api/errors'>response bodies</a> to help you diagnose the problems.
-Each error response returned will have a <code>code</code> and <code>message</code> at a minimum.
-If extra information is available, mountebank will happily pass it to you. If you get stuck,
-email the group on the <a href='/support'>support page</a>, along with your logs, and mountebank
-will happily assist you.</p>
+<div class="card border-0 shadow-sm mb-5">
+  <div class="card-header bg-white py-3 border-0">
+    <h4 class="mb-0 fw-bold" style="color: #00175a;">Capabilities</h4>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-striped mb-0 align-middle">
+        <thead class="bg-light">
+          <tr>
+            <th class="ps-4 py-3 text-uppercase text-secondary small fw-bold" style="width: 30%;">Capability</th>
+            <th class="py-3 text-uppercase text-secondary small fw-bold">Request Body</th>
+            <th class="py-3 text-uppercase text-secondary small fw-bold">Response Body</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ps-4"><a href='#get-home' class="fw-medium text-decoration-none">Get entry hypermedia</a></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=home'
+                class="badge bg-light text-dark border text-decoration-none">home</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#post-imposters' class="fw-medium text-decoration-none">Create a single
+                imposter</a></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#get-imposter' class="fw-medium text-decoration-none">Get a single imposter</a>
+            </td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#add-stub' class="fw-medium text-decoration-none">Add a stub to an imposter</a>
+            </td>
+            <td><a href='/docs/api/contracts?type=addStub'
+                class="badge bg-light text-dark border text-decoration-none">add stub</a></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#change-stub' class="fw-medium text-decoration-none">Overwrite a stub</a></td>
+            <td><a href='/docs/api/contracts?type=stub'
+                class="badge bg-light text-dark border text-decoration-none">stub</a></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#change-stubs' class="fw-medium text-decoration-none">Overwrite all stubs</a></td>
+            <td><a href='/docs/api/contracts?type=stubs'
+                class="badge bg-light text-dark border text-decoration-none">stubs</a></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#delete-stub' class="fw-medium text-decoration-none">Remove a stub</a></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#delete-imposter' class="fw-medium text-decoration-none">Delete a single
+                imposter</a></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#delete-proxy-responses' class="fw-medium text-decoration-none">Delete saved proxy
+                responses</a></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#delete-requests' class="fw-medium text-decoration-none">Delete saved requests</a>
+            </td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=imposter'
+                class="badge bg-light text-dark border text-decoration-none">imposter</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#put-imposters' class="fw-medium text-decoration-none">Overwrite all imposters</a>
+            </td>
+            <td><a href='/docs/api/contracts?type=imposters'
+                class="badge bg-light text-dark border text-decoration-none">imposters</a></td>
+            <td><a href='/docs/api/contracts?type=imposters'
+                class="badge bg-light text-dark border text-decoration-none">imposters</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#get-imposters' class="fw-medium text-decoration-none">Get all imposters</a></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=imposters'
+                class="badge bg-light text-dark border text-decoration-none">imposters</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#delete-imposters' class="fw-medium text-decoration-none">Delete all imposters</a>
+            </td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=imposters'
+                class="badge bg-light text-dark border text-decoration-none">imposters</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#get-config' class="fw-medium text-decoration-none">Get config & process info</a>
+            </td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=config'
+                class="badge bg-light text-dark border text-decoration-none">config</a></td>
+          </tr>
+          <tr>
+            <td class="ps-4"><a href='#get-logs' class="fw-medium text-decoration-none">Get the logs</a></td>
+            <td><span class="text-muted fst-italic">None</span></td>
+            <td><a href='/docs/api/contracts?type=logs'
+                class="badge bg-light text-dark border text-decoration-none">logs</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-<h2>Capabilities</h2>
+<div class="card border-0 shadow-sm mb-5">
+  <div class="card-header bg-white py-3 border-0 d-flex align-items-center justify-content-between">
+    <h3 id='get-home' class="mb-0 fw-bold fs-4 text-amex-navy" style="color: #00175a;">Get entry hypermedia</h3>
+    <span class="badge bg-primary rounded-pill px-3">GET</span>
+  </div>
+  <div class="card-body p-4">
 
-<p>mountebank supports the following capabilities:</p>
+    <div class="d-flex align-items-center bg-light p-3 rounded mb-4 border">
+      <span class="badge bg-primary me-3">GET</span>
+      <code class="fs-5 text-dark fw-bold">/</code>
+    </div>
 
-<table>
-  <tr>
-    <th style='width: 25em;'>Capability</th>
-    <th>Request Body</th>
-    <th>Response Body</th>
-  </tr>
-  <tr>
-    <td><a href='#get-home'>Get entry hypermedia</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=home'>home</a></td>
-  </tr>
-  <tr>
-    <td><a href='#post-imposters'>Create a single imposter</a></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#get-imposter'>Get a single imposter</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#add-stub'>Add a stub to an existing imposter</a></td>
-    <td><a href='/docs/api/contracts?type=addStub'>add stub</a></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#change-stub'>Overwrite a stub of an existing imposter</a></td>
-    <td><a href='/docs/api/contracts?type=stub'>stub</a></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#change-stubs'>Overwrite all stubs of an existing imposter</a></td>
-    <td><a href='/docs/api/contracts?type=stubs'>stubs</a></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#delete-stub'>Remove a stub of an existing imposter</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#delete-imposter'>Delete a single imposter</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#delete-proxy-responses'>Delete saved proxy responses from an imposter</a></td>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td><a href='#delete-requests'>Delete saved requests from an imposter</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=imposter'>imposter</a></td>
-  </tr>
-  <tr>
-    <td><a href='#put-imposters'>Overwrite all imposters with a new set of imposters</a></td>
-    <td><a href='/docs/api/contracts?type=imposters'>imposters</a></td>
-    <td><a href='/docs/api/contracts?type=imposters'>imposters</a></td>
-  </tr>
-  <tr>
-    <td><a href='#get-imposters'>Get a list of all imposters</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=imposters'>imposters</a></td>
-  </tr>
-  <tr>
-    <td><a href='#delete-imposters'>Delete all imposters</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=imposters'>imposters</a></td>
-  </tr>
-  <tr>
-    <td><a href='#get-config'>Get mountebank configuration and process information</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=config'>config</a></td>
-  </tr>
-  <tr>
-    <td><a href='#get-logs'>Get the logs</a></td>
-    <td></td>
-    <td><a href='/docs/api/contracts?type=logs'>logs</a></td>
-  </tr>
-</table>
+    <p class="mb-3">
+      <b>Response contract</b>: <a href='/docs/api/contracts?type=home' class="fw-medium text-decoration-none">home</a>
+    </p>
 
-<h3 id='get-home'>Get entry hypermedia</h3>
+    <p class="text-muted">
+      This endpoint exists for those who aspire to the
+      <a href='http://martinfowler.com/articles/richardsonMaturityModel.html'
+        class="text-primary text-decoration-none">upper echelons of REST</a>,
+      using hypermedia as the engine of application state. For those with more humble aspirations, mountebank
+      provides URL templates for all capabilities.
+    </p>
 
-<pre><code>GET /</code></pre>
-
-<p><b>Response contract</b>: <a href='/docs/api/contracts?type=home'>home</a></p>
-
-<p>This endpoint exists for those who aspire to the
-<a href='http://martinfowler.com/articles/richardsonMaturityModel.html'>upper echelons of REST</a>,
-using hypermedia as the engine of application state. For those with more humble aspirations, mountebank
-provides URL templates for all capabilities.</p>
-
-<testScenario name='home'>
-    <step type='http'>
-<pre><code>GET / HTTP/1.1
+    <div class="mt-4">
+      <h6 class="fw-bold text-uppercase text-muted small mb-3">Example</h6>
+      <testScenario name='home'>
+        <step type='http'>
+          <pre><code>GET / HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+          <assertResponse>
+            <pre><code>HTTP/1.1 200 OK
 Vary: Accept
 Content-Type: application/json; charset=utf-8
 Content-Length: 226
 Date: <volatile>Sun, 05 Jan 2014 16:16:08 GMT</volatile>
 Connection: keep-alive
-
+        
 {
   "_links": {
     "imposters": { "href": "http://localhost:{{ .port }}/imposters" },
@@ -130,38 +187,62 @@ Connection: keep-alive
     "logs": { "href": "http://localhost:{{ .port }}/logs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
-</testScenario>
+          </assertResponse>
+        </step>
+      </testScenario>
+    </div>
+  </div>
+</div>
 
-<h3 id='post-imposters'>Create a single imposter</h3>
+<div class="card border-0 shadow-sm mb-5">
+  <div class="card-header bg-white py-3 border-0 d-flex align-items-center justify-content-between">
+    <h3 id='post-imposters' class="mb-0 fw-bold fs-4 text-amex-navy" style="color: #00175a;">Create a single imposter
+    </h3>
+    <span class="badge bg-success rounded-pill px-3">POST</span>
+  </div>
+  <div class="card-body p-4">
 
-<pre><code>POST /imposters</code></pre>
+    <div class="d-flex align-items-center bg-light p-3 rounded mb-4 border">
+      <span class="badge bg-success me-3">POST</span>
+      <code class="fs-5 text-dark fw-bold">/imposters</code>
+    </div>
 
-<p><b>Request contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
-<p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
+    <p class="mb-3">
+      <b>Request contract</b>: <a href='/docs/api/contracts?type=imposter'
+        class="fw-medium text-decoration-none">imposter</a> <br>
+      <b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'
+        class="fw-medium text-decoration-none">imposter</a>
+    </p>
 
-<p>Though he's not proud to admit it, mountebank employs an army of imposters to
-fulfill your orders.  Because your needs are varied and sundry, his imposters
-are all different, and all are identified by a port number and associated with
-a protocol.  The value you get out of mountebank always starts by creating an imposter,
-which represents a test double listening on a socket.</p>
+    <p class="text-muted">
+      Though he's not proud to admit it, mountebank employs an army of imposters to
+      fulfill your orders. Because your needs are varied and sundry, his imposters
+      are all different, and all are identified by a port number and associated with
+      a protocol. The value you get out of mountebank always starts by creating an imposter,
+      which represents a test double listening on a socket.
+    </p>
 
-<p><strong>Parameters:</strong></p>
+    <div class="alert alert-info border-0 bg-light text-secondary mb-4">
+      <h6 class="fw-bold"><i class="bi bi-gear-fill me-2"></i>Parameters</h6>
+      <p class="mb-2">
+        If you don't need stubbing, then the port and protocol are all you need. The parameters
+        each type of imposter accepts are explained on the page for the particular protocol
+        you're interested in. See the protocols section on the sidebar on the left.
+      </p>
+      <p class="mb-0">
+        mountebank expects that you will be responsible for providing the
+        port, since you'll need to configure the application under test with the same
+        port. However, the port is not required, and if you do not include it in the
+        request, mountebank will randomly assign one for you and return the port number
+        in the response.
+      </p>
+    </div>
 
-<p>If you don't need stubbing, then the port and protocol are all you need.  The parameters
-each type of imposter accepts are explained on the page for the particular protocol
-you're interested in.  See the protocols section on the sidebar on the left.</p>
-
-<p>mountebank expects that you will be responsible for providing the
-port, since you'll need to configure the application under test with the same
-port.  However, the port is not required, and if you do not include it in the
-request, mountebank will randomly assign one for you and return the port number
-in the response.</p>
-
-<testScenario name='imposters'>
-    <step type='http'>
-<pre><code>POST /imposters HTTP/1.1
+    <div class="mt-4">
+      <h6 class="fw-bold text-uppercase text-muted small mb-3">Example</h6>
+      <testScenario name='imposters'>
+        <step type='http'>
+          <pre><code>POST /imposters HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json
 Content-Type: application/json
@@ -171,14 +252,14 @@ Content-Type: application/json
   "protocol": "http"
 }</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 201 Created
+          <assertResponse>
+            <pre><code>HTTP/1.1 201 Created
 Location: http://localhost:{{ .port }}/imposters/4545
 Content-Type: application/json; charset=utf-8
 Content-Length: 298
 Date: <volatile>Sun, 05 Jan 2014 16:28:40 GMT</volatile>
 Connection: keep-alive
-
+        
 {
   "protocol": "http",
   "port": 4545,
@@ -191,15 +272,21 @@ Connection: keep-alive
     "stubs": { "href": "http://localhost:{{ .port }}/imposters/4545/stubs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+          </assertResponse>
+        </step>
 
-<p>You can also initialize <a href='/docs/api/stubs'>stubs</a> in the <code>POST</code> call.</p>
+        <p class="mt-3 text-muted">You can also initialize <a href='/docs/api/stubs'
+            class="text-decoration-none">stubs</a> in the <code>POST</code> call.</p>
 
-<p>mountebank expects you to configure your application under test to point to the imposter. In
-the case above, that would mean that your application has an http dependency configured to
-http://localhost:4545. To retrieve a list of all imposters, simply issue a <code>GET</code>:</p>
-
+        <p class="text-muted">
+          mountebank expects you to configure your application under test to point to the imposter. In
+          the case above, that would mean that your application has an http dependency configured to
+          http://localhost:4545. To retrieve a list of all imposters, simply issue a <code>GET</code>:
+        </p>
+      </testScenario>
+    </div>
+  </div>
+</div>
 <h3 id='get-imposter'>Get a single imposter</h3>
 
 <pre><code>GET /imposters/:port</code></pre>
@@ -210,11 +297,13 @@ http://localhost:4545. To retrieve a list of all imposters, simply issue a <code
 
 <ul class='bullet-list'>
   <li>You want to perform <a href='/docs/api/mocks'>mock verifications</a> by inspecting the
-    <a href='/docs/api/mocks'><code>requests</code> array</a>).</li>
+    <a href='/docs/api/mocks'><code>requests</code> array</a>).
+  </li>
   <li>You want to debug <a href='/docs/api/predicates'>stub predicates</a> by inspecting the
     <a href='/docs/api/stubs#matches-array'><code>matches</code> array</a> (you must run
     <code>mb</code> with the <a href='/docs/commandLine'> <code>--debug</code> command line
-      parameter</a> for this to work).</li>
+      parameter</a> for this to work).
+  </li>
   <li>You <a href='/docs/api/proxies'>proxied</a> a real service, and want to be save off the
     saved responses in a subsequent disconnected test run.</li>
 </ul>
@@ -231,27 +320,29 @@ http://localhost:4545. To retrieve a list of all imposters, simply issue a <code
     <td><code>replayable</code></td>
     <td>boolean</td>
     <td>Set to <code>true</code> to retrieve the minimum amount of information for
-      <a href='#post-imposters'>creating the imposter</a> in the future.  This leaves
-      out the <a href='/docs/api/mocks'><code>requests</code> array</a> and any hypermedia.</td>
+      <a href='#post-imposters'>creating the imposter</a> in the future. This leaves
+      out the <a href='/docs/api/mocks'><code>requests</code> array</a> and any hypermedia.
+    </td>
   </tr>
   <tr>
     <td><code>removeProxies</code></td>
     <td>boolean</td>
     <td>Set to <code>true</code> to remove all proxy responses (and stubs) from the response.
       This is useful in record-playback scenarios where you want to seed the imposters with
-      proxy information but leave it out on subsequent test runs.  You can
-      <a href='#post-imposters'>recreate the imposter</a> in the future by using the response.</td>
+      proxy information but leave it out on subsequent test runs. You can
+      <a href='#post-imposters'>recreate the imposter</a> in the future by using the response.
+    </td>
   </tr>
 </table>
 
-    <step type='http'>
-<pre><code>GET /imposters/4545 HTTP/1.1
+<step type='http'>
+  <pre><code>GET /imposters/4545 HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json
 </code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Vary: Accept
 Content-Type: application/json; charset=utf-8
 Content-Length: 298
@@ -270,23 +361,24 @@ Connection: keep-alive
     "stubs": { "href": "http://localhost:{{ .port }}/imposters/4545/stubs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <p>Had we set the <code>replayable</code> query parameter, the
-<a href='/docs/api/mocks'><code>requests</code> array</a> and
-<code>_links</code> elements would not be there.  If we had any <a href='/docs/api/stubs'>stubs</a>,
-the <a href='/docs/api/stubs#matches-array'><code>matches</code> array</a> would also not be present
-regardless of whether we ran <code>mb</code> with the <code>--debug</code> command line parameter or
-not. None of those fields are used during the creation of an imposter.</p>
+  <a href='/docs/api/mocks'><code>requests</code> array</a> and
+  <code>_links</code> elements would not be there. If we had any <a href='/docs/api/stubs'>stubs</a>,
+  the <a href='/docs/api/stubs#matches-array'><code>matches</code> array</a> would also not be present
+  regardless of whether we ran <code>mb</code> with the <code>--debug</code> command line parameter or
+  not. None of those fields are used during the creation of an imposter.
+</p>
 
-    <step type='http'>
-<pre><code>GET /imposters/4545?replayable=true HTTP/1.1
+<step type='http'>
+  <pre><code>GET /imposters/4545?replayable=true HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Vary: Accept
 Content-Type: application/json; charset=utf-8
 Content-Length: 82
@@ -299,8 +391,8 @@ Connection: keep-alive
   "recordRequests": false,
   "stubs": []
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='add-stub'>Add a stub to an existing imposter</h3>
 
@@ -310,13 +402,14 @@ Connection: keep-alive
 <pre><code>POST /imposters/:port/stubs</code></pre>
 
 <p>In most cases, you would add the stubs at the time you create the imposter, but this call
-allows you to add a stub to an existing imposter without restarting it. You can add the
-new stub at any index between 0 and the end of the existing array. If you leave off the
-<code>index</code> field, the stub will be added to the end of the existing <code>stubs</code>
-array. On a successful request, mountebank will return the updated imposter resource.</p>
+  allows you to add a stub to an existing imposter without restarting it. You can add the
+  new stub at any index between 0 and the end of the existing array. If you leave off the
+  <code>index</code> field, the stub will be added to the end of the existing <code>stubs</code>
+  array. On a successful request, mountebank will return the updated imposter resource.
+</p>
 
-    <step type='http'>
-<pre><code>POST /imposters/4545/stubs HTTP/1.1
+<step type='http'>
+  <pre><code>POST /imposters/4545/stubs HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json
 
@@ -331,8 +424,8 @@ Accept: application/json
   }
 }</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 548
 Date: <volatile>Wed, 19 Jun 2019 01:00:55 GMT</volatile>
@@ -359,8 +452,8 @@ Connection: keep-alive
     "stubs": { "href": "http://localhost:{{ .port }}/imposters/4545/stubs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='change-stub'>Change a stub in an existing imposter</h3>
 
@@ -370,12 +463,13 @@ Connection: keep-alive
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
 
 <p>Use this endpoint to overwrite an existing stub without restarting the imposter. The
-<code>stubIndex</code> must match the array index of the stub you wish to change. Pass
-the new stub as the body of the request. The response will provide the updated imposter
-resource.</p>
+  <code>stubIndex</code> must match the array index of the stub you wish to change. Pass
+  the new stub as the body of the request. The response will provide the updated imposter
+  resource.
+</p>
 
-    <step type='http'>
-<pre><code>PUT /imposters/4545/stubs/0 HTTP/1.1
+<step type='http'>
+  <pre><code>PUT /imposters/4545/stubs/0 HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json
 
@@ -387,8 +481,8 @@ Accept: application/json
   }]
 }</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 550
 Date: <volatile>Wed, 19 Jun 2019 01:00:55 GMT</volatile>
@@ -415,8 +509,8 @@ Connection: keep-alive
     "stubs": { "href": "http://localhost:{{ .port }}/imposters/4545/stubs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='change-stubs'>Overwrite all stubs in an existing imposter</h3>
 
@@ -426,10 +520,10 @@ Connection: keep-alive
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
 
 <p>Use this endpoint to overwrite all existing stub without restarting the imposter. The
-response will provide the updated imposter resource.</p>
+  response will provide the updated imposter resource.</p>
 
-    <step type='http'>
-<pre><code>PUT /imposters/4545/stubs HTTP/1.1
+<step type='http'>
+  <pre><code>PUT /imposters/4545/stubs HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json
 
@@ -441,8 +535,8 @@ Accept: application/json
   }]
 }</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 543
 Date: <volatile>Wed, 19 Jun 2019 01:00:55 GMT</volatile>
@@ -469,8 +563,8 @@ Connection: keep-alive
     "stubs": { "href": "http://localhost:{{ .port }}/imposters/4545/stubs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='delete-stub'>Remove a single stub from an existing imposter</h3>
 
@@ -479,15 +573,15 @@ Connection: keep-alive
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
 
 <p>Use this endpoint to remove the stub at the given array index without restarting the imposter. The
-response will provide the updated imposter resource.</p>
+  response will provide the updated imposter resource.</p>
 
-    <step type='http'>
-<pre><code>DELETE /imposters/4545/stubs/0 HTTP/1.1
+<step type='http'>
+  <pre><code>DELETE /imposters/4545/stubs/0 HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 298
 Date: <volatile>Wed, 19 Jun 2019 01:00:55 GMT</volatile>
@@ -505,8 +599,8 @@ Connection: keep-alive
     "stubs": { "href": "http://localhost:{{ .port }}/imposters/4545/stubs" }
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='delete-imposter'>Delete a single imposter</h3>
 
@@ -515,10 +609,11 @@ Connection: keep-alive
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
 
 <p>As mentioned above, typically you want to delete the imposter after each test run. This
-frees up the socket and removes the resource. As a convenience, the <code>DELETE</code> call
-also returns the imposter representation just like a <a href='#get-imposter'><code>GET</code> imposter</a>
-would. This allows you to optimize the number of REST calls made during a test run when looking
-at the <code>requests</code> array for <a href='/docs/api/mocks'>mock verification.</a><p>
+  frees up the socket and removes the resource. As a convenience, the <code>DELETE</code> call
+  also returns the imposter representation just like a <a href='#get-imposter'><code>GET</code> imposter</a>
+  would. This allows you to optimize the number of REST calls made during a test run when looking
+  at the <code>requests</code> array for <a href='/docs/api/mocks'>mock verification.</a>
+<p>
 
 <p><strong>Query Parameters:</strong></p>
 
@@ -532,26 +627,28 @@ at the <code>requests</code> array for <a href='/docs/api/mocks'>mock verificati
     <td><code>replayable</code></td>
     <td>boolean</td>
     <td>Set to <code>true</code> to retrieve the minimum amount of information for
-      <a href='#post-imposters'>creating the imposter</a> in the future.  This leaves
-      out the <a href='/docs/api/mocks'><code>requests</code> array</a> and any hypermedia.</td>
+      <a href='#post-imposters'>creating the imposter</a> in the future. This leaves
+      out the <a href='/docs/api/mocks'><code>requests</code> array</a> and any hypermedia.
+    </td>
   </tr>
   <tr>
     <td><code>removeProxies</code></td>
     <td>boolean</td>
     <td>Set to <code>true</code> to remove all proxy responses (and stubs) from the response.
       This is useful in record-playback scenarios where you want to seed the imposters with
-      proxy information but leave it out on subsequent test runs.  You can
-      <a href='#post-imposters'>recreate the imposter</a> in the future by using the response.</td>
+      proxy information but leave it out on subsequent test runs. You can
+      <a href='#post-imposters'>recreate the imposter</a> in the future by using the response.
+    </td>
   </tr>
 </table>
 
-    <step type='http'>
-<pre><code>DELETE /imposters/4545 HTTP/1.1
+<step type='http'>
+  <pre><code>DELETE /imposters/4545 HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 298
 Date: <volatile>Sun, 05 Jan 2014 16:59:33 GMT</volatile>
@@ -570,19 +667,20 @@ Connection: keep-alive
   }
 }
 </code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='delete-proxy-responses'>Delete saved proxy responses from an imposter</h3>
 
 <pre><code>DELETE /imposters/:port/savedProxyResponses</code></pre>
 
 <p><a href='/docs/api/proxies'>Proxy stubs</a> save all responses returned from downstream systems. Usually
-this is what you want, as they can be played back at a later time without the actual downstream system
-available. However, if you need to clear them but keep the stubs intact, you can do so with this call.<p>
+  this is what you want, as they can be played back at a later time without the actual downstream system
+  available. However, if you need to clear them but keep the stubs intact, you can do so with this call.
+<p>
 
 <p class='info-icon'>Note that you can prevent the proxy from saving responses by setting the <code>mode</code>
-to <a href='/docs/api/proxies#proxy-modes'><code>proxyTransparent</code></a>.</p>
+  to <a href='/docs/api/proxies#proxy-modes'><code>proxyTransparent</code></a>.</p>
 
 <h3 id='delete-requests'>Delete saved requests from an imposter</h3>
 
@@ -590,8 +688,9 @@ to <a href='/docs/api/proxies#proxy-modes'><code>proxyTransparent</code></a>.</p
 
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposter'>imposter</a></p>
 
-<p>Clear an imposter's recorded requests (used for <a href='/docs/api/mocks'>mock verification</a>) while leaving the rest of the imposter intact.
-On a successful request, mountebank will return the updated imposter resource.</p>
+<p>Clear an imposter's recorded requests (used for <a href='/docs/api/mocks'>mock verification</a>) while leaving the
+  rest of the imposter intact.
+  On a successful request, mountebank will return the updated imposter resource.</p>
 
 <h3 id='put-imposters'>Overwrite all imposters with a new set of imposters</h3>
 
@@ -601,20 +700,20 @@ On a successful request, mountebank will return the updated imposter resource.</
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposters'>imposters</a></p>
 
 <p>Sometimes you want to create a batch of imposters in a single call, overwriting
-any imposters already created.  This call is destructive - it will first delete all
-existing imposters. The output of a <code>GET /imposters?replayable=true</code> can
-directly be replayed through this call. This call is also used during startup
-if you set the <code>--configfile</code> <a href='/docs/commandLine'>command line</a>
-flag.</p>
+  any imposters already created. This call is destructive - it will first delete all
+  existing imposters. The output of a <code>GET /imposters?replayable=true</code> can
+  directly be replayed through this call. This call is also used during startup
+  if you set the <code>--configfile</code> <a href='/docs/commandLine'>command line</a>
+  flag.</p>
 
 <p><strong>Parameters:</strong></p>
 
-<p>You must provide mountebank an <code>imposters</code> array.  Each element in the
-array is the same as what's needed to <a href='#post-imposters'>create a single imposter</a>,
-the parameters for which vary by protocol.  View the protocol pages on the left for details.</p>
+<p>You must provide mountebank an <code>imposters</code> array. Each element in the
+  array is the same as what's needed to <a href='#post-imposters'>create a single imposter</a>,
+  the parameters for which vary by protocol. View the protocol pages on the left for details.</p>
 
-    <step type='http'>
-<pre><code>PUT /imposters HTTP/1.1
+<step type='http'>
+  <pre><code>PUT /imposters HTTP/1.1
 Host: localhost:{{ .port }}
 Content-Type: application/json
 
@@ -636,8 +735,8 @@ Content-Type: application/json
   ]
 }</code></pre>
 
-        <assertResponse>
-<pre><code>
+  <assertResponse>
+    <pre><code>
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 898
@@ -675,8 +774,8 @@ Connection: keep-alive
     }
   ]
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='get-imposters'>Get a list of all imposters</h3>
 
@@ -684,10 +783,11 @@ Connection: keep-alive
 
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposters'>imposters</a></p>
 
-<p>This is where you will come to retrieve a list of all active imposters.  By default,
-mountebank returns some basic information and hypermedia.  If you want more information,
-either <a href='#get-imposter'>get the single imposter</a> or use the
-<code>replayable</code> flag.</p>
+<p>This is where you will come to retrieve a list of all active imposters. By default,
+  mountebank returns some basic information and hypermedia. If you want more information,
+  either <a href='#get-imposter'>get the single imposter</a> or use the
+  <code>replayable</code> flag.
+</p>
 
 <p><strong>Query Parameters:</strong></p>
 
@@ -702,7 +802,7 @@ either <a href='#get-imposter'>get the single imposter</a> or use the
     <td>boolean</td>
     <td>Set to <code>true</code> to retrieve the minimum amount of information for replaying
       the set of imposters in the future through a <a href='#put-imposters'>mass create</a>
-      call.  This leaves out the <a href='/docs/api/mocks'><code>requests</code> array</a>
+      call. This leaves out the <a href='/docs/api/mocks'><code>requests</code> array</a>
       and any hypermedia.</td>
   </tr>
   <tr>
@@ -710,18 +810,19 @@ either <a href='#get-imposter'>get the single imposter</a> or use the
     <td>boolean</td>
     <td>Set to <code>true</code> to remove all proxy responses (and stubs) from the response.
       This is useful in record-playback scenarios where you want to seed the imposters with
-      proxy information but leave it out on subsequent test runs.  You can
-      <a href='#put-imposters'>recreate the imposter</a> in the future by using the response.</td>
+      proxy information but leave it out on subsequent test runs. You can
+      <a href='#put-imposters'>recreate the imposter</a> in the future by using the response.
+    </td>
   </tr>
 </table>
 
-    <step type='http'>
-<pre><code>GET /imposters HTTP/1.1
+<step type='http'>
+  <pre><code>GET /imposters HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Vary: Accept
 Content-Type: application/json; charset=utf-8
 Content-Length: 898
@@ -759,8 +860,8 @@ Connection: keep-alive
     }
   ]
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='delete-imposters'>Delete all imposters</h3>
 
@@ -769,8 +870,8 @@ Connection: keep-alive
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=imposters'>imposters</a></p>
 
 <p>The surest way to reset to a clean slate is to delete all imposters. Any imposter sockets
-mountebank has open will be closed, and the response body will contain exactly what you need
-to <a href='#put-imposters'>mass create</a> the same imposters in the future.</p>
+  mountebank has open will be closed, and the response body will contain exactly what you need
+  to <a href='#put-imposters'>mass create</a> the same imposters in the future.</p>
 
 <p><strong>Query Parameters:</strong></p>
 
@@ -783,27 +884,29 @@ to <a href='#put-imposters'>mass create</a> the same imposters in the future.</p
   <tr>
     <td><code>replayable</code></td>
     <td>boolean</td>
-    <td>Defaults to true.  Set to <code>false</code> to retrieve the
-      <a href='/docs/api/mocks'><code>requests</code></a> arrays with the response.  You can still
-      <a href='#put-imposters'>mass create</a> using this JSON; it just has extraneous information.</td>
+    <td>Defaults to true. Set to <code>false</code> to retrieve the
+      <a href='/docs/api/mocks'><code>requests</code></a> arrays with the response. You can still
+      <a href='#put-imposters'>mass create</a> using this JSON; it just has extraneous information.
+    </td>
   </tr>
   <tr>
     <td><code>removeProxies</code></td>
     <td>boolean</td>
     <td>Set to <code>true</code> to remove all proxy responses (and stubs) from the response.
       This is useful in record-playback scenarios where you want to seed the imposters with
-      proxy information but leave it out on subsequent test runs.  You can
-      <a href='#put-imposters'>recreate the imposters</a> in the future by using the response.</td>
+      proxy information but leave it out on subsequent test runs. You can
+      <a href='#put-imposters'>recreate the imposters</a> in the future by using the response.
+    </td>
   </tr>
 </table>
 
-    <step type='http'>
-<pre><code>DELETE /imposters HTTP/1.1
+<step type='http'>
+  <pre><code>DELETE /imposters HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 Content-Length: 370
 Date: <volatile>Sun, 05 Jan 2014 16:58:25 GMT</volatile>
@@ -832,8 +935,8 @@ Connection: keep-alive
     }
   ]
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='get-config'>Get mountebank configuration and process information</h3>
 
@@ -842,15 +945,15 @@ Connection: keep-alive
 <p><b>Response contract</b>: <a href='/docs/api/contracts?type=config'>config</a></p>
 
 <p>If you want to know about the environment mountebank is running it, this resource will give you
-what you need.  It describes the version, command line flags, and process information.</p>
+  what you need. It describes the version, command line flags, and process information.</p>
 
-    <step type='http'>
-<pre><code>GET /config HTTP/1.1
+<step type='http'>
+  <pre><code>GET /config HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Vary: Accept
 Content-Type: application/json; charset=utf-8
 Content-Length: <volatile>550</volatile>
@@ -899,8 +1002,8 @@ Connection: keep-alive
     "cwd": "<volatile>/Users/bbyars/src/mountebank</volatile>"
   }
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 
 <h3 id='get-logs'>Get the logs</h3>
 
@@ -928,13 +1031,13 @@ Connection: keep-alive
   </tr>
 </table>
 
-    <step type='http'>
-<pre><code>GET /logs?startIndex=0&endIndex=1 HTTP/1.1
+<step type='http'>
+  <pre><code>GET /logs?startIndex=0&endIndex=1 HTTP/1.1
 Host: localhost:{{ .port }}
 Accept: application/json</code></pre>
 
-        <assertResponse>
-<pre><code>HTTP/1.1 200 OK
+  <assertResponse>
+    <pre><code>HTTP/1.1 200 OK
 Vary: Accept
 Content-Type: application/json; charset=utf-8
 Content-Length: <volatile>5249</volatile>
@@ -955,11 +1058,11 @@ Connection: keep-alive
     }
   ]
 }</code></pre>
-        </assertResponse>
-    </step>
+  </assertResponse>
+</step>
 </testScenario>
 
 <p>In the rare scenario where mountebank is hosted on a different server and you need access to the logs,
-they are accessible through this endpoint.</p>
+  they are accessible through this endpoint.</p>
 
 {{ template "_footer.html" . }}

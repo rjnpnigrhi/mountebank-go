@@ -1,86 +1,167 @@
-
-
 {{ template "_header.html" . }}
 
-{{ if gt (len .notices) 0 }}
-<div id='notice'>
-{{ range $notice := .notices }}
-  <div><a href='/releases/{{ .notice.version }}'>{{ .notice.version }}</a> was released {{ .notice.when }}</div>
-{{ end }}
+<div class="row g-4">
+
+  <!-- Notices -->
+  {{ if gt (len .notices) 0 }}
+  <div class="col-12">
+    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center bg-amex-50 text-amex-900 icon-link-hover"
+      role="alert" style="background-color: #eef6ff; color: #002646;">
+      <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+      <div>
+        {{ range $notice := .notices }}
+        <div>
+          <a href='/releases/{{ .notice.version }}' class="fw-bold text-decoration-none" style="color: #006fcf;">{{
+            .notice.version }}</a>
+          <span class="text-secondary">was released {{ .notice.when }}</span>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+  {{ end }}
+
+  <!-- Welcome Hero -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm bg-white overflow-hidden">
+      <div class="row g-0">
+        <div class="col-lg-8 p-5 d-flex flex-column justify-content-center">
+          <h1 class="display-5 fw-bold mb-3" style="color: #00175a;">Welcome, friend</h1>
+          <p class="lead mb-4" style="color: #333;">
+            Mountebank is the first open source tool to provide cross-platform, multi-protocol test doubles over the
+            wire.
+          </p>
+          <p class="text-secondary">
+            Simply point your application under test to mountebank instead of the real dependency, and test like you
+            would with traditional stubs and mocks.
+            It is the most capable open source service virtualization tool in existence.
+          </p>
+          <div class="mt-4">
+            <a href="/docs/gettingStarted" class="btn btn-amex px-4 py-2 me-2">Get Started</a>
+            <a href="/docs/api/overview" class="btn btn-outline-secondary px-4 py-2">View API</a>
+          </div>
+        </div>
+        <div class="col-lg-4 bg-light d-none d-lg-flex align-items-center justify-content-center p-4"
+          style="background-color: #f4f6f8;">
+          <img src="/images/mountebank.png" class="img-fluid"
+            style="max-height: 200px; filter: grayscale(100%) opacity(0.5);" alt="Mountebank Logo">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why Mountebank Cards -->
+  <div class="col-12">
+    <h3 class="fw-bold mb-4 mt-2" style="color: #444;">Why mountebank?</h3>
+    <div class="row g-4">
+      <!-- Trivial -->
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm hover-shadow transition-all"
+          style="border-top: 4px solid #006fcf !important;">
+          <div class="card-body p-4">
+            <div class="fs-1 mb-3" style="color: #006fcf;"><i class="bi bi-lightning-charge"></i></div>
+            <h5 class="card-title fw-bold" style="color: #00175a;">Trivial to get started</h5>
+            <p class="card-text text-muted small">
+              Easy to install, no platform dependencies. Comprehensive documentation, examples, and a nice interactive
+              UI.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- Platform -->
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm hover-shadow transition-all"
+          style="border-top: 4px solid #006fcf !important;">
+          <div class="card-body p-4">
+            <div class="fs-1 mb-3" style="color: #006fcf;"><i class="bi bi-layers"></i></div>
+            <h5 class="card-title fw-bold" style="color: #00175a;">A platform, not just a tool</h5>
+            <p class="card-text text-muted small">
+              Fully cross-platform with <a href='/docs/communityExtensions' class="text-decoration-none">native language
+                bindings</a>.
+              Servers are <a href="/docs/api/injection" class="text-decoration-none">extensible</a> through scripting.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- Powerful -->
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm hover-shadow transition-all"
+          style="border-top: 4px solid #006fcf !important;">
+          <div class="card-body p-4">
+            <div class="fs-1 mb-3" style="color: #006fcf;"><i class="bi bi-hdd-network"></i></div>
+            <h5 class="card-title fw-bold" style="color: #00175a;">Powerful</h5>
+            <p class="card-text text-muted small">
+              Non-modal and multi-protocol. Free of charge without platform constraints, unlike commercial solutions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body p-5">
+        <h3 class="fw-bold mb-4" style="color: #00175a;">How it works</h3>
+        <p class="text-muted">
+          Mountebank employs a legion of <em>imposters</em> to act as on-demand test doubles.
+          Your test communicates to mountebank over HTTP using the <a href='/docs/api/overview'
+            class="text-decoration-none">API</a> to set up stubs, proxies, and verify mock expectations.
+        </p>
+        <div class="text-center my-4 bg-light rounded p-3">
+          <img src='/images/overview.gif' alt='mountebank overview' class="img-fluid rounded shadow-sm bg-white p-1"
+            style="max-width: 100%; border: 1px solid #dee2e6;" />
+        </div>
+        <p class="text-muted">
+          Typically, each test starts an imposter during setup and stops it during teardown.
+          View the <a href='/docs/gettingStarted' class="text-decoration-none fw-bold">getting started guide</a> for a
+          quick intro.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Testimonials -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100 text-white"
+      style="background: linear-gradient(135deg, #006fcf 0%, #00175a 100%);">
+      <div class="card-body p-4 d-flex flex-column justify-content-center">
+        <h3 class="fw-bold mb-4 border-bottom border-white border-opacity-25 pb-2">Testimonials</h3>
+
+        <figure class="mb-4">
+          <blockquote class="blockquote fs-6">
+            <p>"With mountebank, maybe we <em>could</em> have built it in a day."</p>
+          </blockquote>
+          <figcaption class="blockquote-footer text-white text-opacity-75">
+            Remus and Romulus <cite title="Source Title">Builders of Rome</cite>
+          </figcaption>
+        </figure>
+
+        <figure class="mb-4">
+          <blockquote class="blockquote fs-6">
+            <p>"With mountebank, all the world's a nail."</p>
+          </blockquote>
+          <figcaption class="blockquote-footer text-white text-opacity-75">
+            Thor <cite title="Source Title">God of Thunder</cite>
+          </figcaption>
+        </figure>
+
+        <figure>
+          <blockquote class="blockquote fs-6">
+            <p class="small">...we made the call to move the entire program over to a Mountebank OSS-based solution...
+            </p>
+          </blockquote>
+          <figcaption class="blockquote-footer text-white text-opacity-75">
+            <a href='https://medium.com/capital-one-developers/moving-one-of-capital-ones-largest-customer-facing-apps-to-aws-668d797af6fc'
+              class="text-white text-decoration-underline small">Capital One's Mobile Cloud Migration</a>
+          </figcaption>
+        </figure>
+
+      </div>
+    </div>
+  </div>
+
 </div>
-{{ end }}
-
-<h1>Welcome, friend</h1>
-
-<p>mountebank is the first open source tool to provide cross-platform, multi-protocol test
-doubles over the wire.  Simply point your application under test to mountebank
-instead of the real dependency, and test like you would with traditional stubs and mocks.</p>
-
-<p>mountebank is the most capable open source service virtualization tool in existence, and
-    will cure what ails you, guaranteed.</p>
-
-<h2>How it works</h2>
-
-<p>mountebank employs a legion of <em>imposters</em> to act as on-demand test doubles.
-Your test communicates to mountebank over http using the <a href='/docs/api/overview'>api</a>
-to set up <a href='/docs/api/stubs'>stubs</a>, <a href='/docs/api/proxies'>record and replay proxies</a>,
-and verify <a href='/docs/api/mocks'>mock expectations</a>.  In the typical use case, each
-test will start an imposter during test setup and stop an imposter during test teardown, although
-you are also welcome to configure mountebank at startup using a <a href='/docs/commandLine#config-file'>
-config file</a>.</p>
-
-<p>mountebank employs several types of imposters, each responding to a specific protocol.
-Typically, your test will tell the imposter which port to bind to, and the imposter will
-open the corresponding socket.</p>
-
-<img src='/images/overview.gif' alt='mountebank' />
-
-<p>View the <a href='/docs/gettingStarted'>getting started guide</a> for a quick introduction.</p>
-
-<h2>Testimonials</h2>
-
-<blockquote>
-  <p>With mountebank, maybe we <em>could</em> have built it in a day.</p>
-  <p class='cite'>Remus and Romulus, builders of Rome</p>
-</blockquote>
-
-<blockquote>
-  <p class='quote'>With mountebank, all the world's a nail.</p>
-  <p class='cite'>Thor, God of Thunder</p>
-</blockquote>
-
-<blockquote>
-    <p class='quote'>In fact, halfway through we discovered our corporate mocking software couldn’t handle the
-        sheer amount of performance testing we were running as part of this effort (<strong>we completely crushed
-        some pretty industrial enterprise software in the process</strong>). As a result, we made the call to move
-        the entire program over to a Mountebank OSS-based solution with a custom provision to give us the ability
-        to expand/shrink our mocking needs on demand.</p>
-    <p class='cite'><a href='https://medium.com/capital-one-developers/moving-one-of-capital-ones-largest-customer-facing-apps-to-aws-668d797af6fc'>Capital One's Mobile Cloud Migration</a></p>
-</blockquote>
-
-<h2>Why mountebank?</h2>
-
-<p>mountebank has the following goals:</p>
-
-<dl>
-  <dt>Trivial to get started</dt>
-  <dd>mountebank is easy to install, without any platform dependencies.  mountebank aims
-    for fun and comprehensive documentation with lots of examples, and a nice UI that lets
-    you explore the API interactively.</dd>
-
-  <dt>A platform, not just a tool</dt>
-  <dd>mountebank aims to be fully cross-platform, with <a href='/docs/communityExtensions'>native language bindings</a>.
-    Servers are <a href="/docs/api/injection">extensible</a> through scripting when the out of the box
-    functionality isn't enough.</dd>
-
-  <dt>Powerful</dt>
-  <dd>mountebank is the only open source service virtualization tool that is non-modal and multi-protocol.
-    Commercial solutions exist, but their licensed platforms make it hard to move the tests closer to development
-    and may even require a specialized IDE. mountebank provides service virtualization free of charge without any
-    platform constraints</dd>
-</dl>
-
-<p>Not all of mountebank's goals are currently implemented, but fear not, for he has
-  a team of top-notch open source developers, and they are legion.</p>
 
 {{ template "_footer.html" . }}
